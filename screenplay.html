@@ -361,6 +361,33 @@ header {
 .ref-band-icon { font-size: 16px; flex-shrink: 0; }
 .ref-band strong { color: var(--warn); }
 
+.script-reader { font-family: 'Courier New', Courier, monospace; font-size: 12px; line-height: 1.8; }
+.script-act { margin: 20px 0 8px; }
+.script-act-label { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; padding: 4px 11px; border-radius: 20px; display: inline-block; margin-bottom: 4px; }
+.script-act-label.a1 { background: var(--ok-lt); color: var(--ok); }
+.script-act-label.a2 { background: var(--acc-lt); color: var(--acc); }
+.script-act-label.a3 { background: var(--warn-lt); color: var(--warn); }
+.script-slug { font-weight: 700; font-size: 11px; letter-spacing: .4px; text-transform: uppercase; color: var(--n1); margin: 18px 0 4px; padding: 6px 0; border-top: 1px solid var(--border); }
+.slug-beat { font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; margin-left: 8px; vertical-align: middle; }
+.slug-beat.incident { background: var(--danger-lt); color: var(--danger); }
+.slug-beat.midpoint { background: var(--acc-lt); color: var(--acc); }
+.slug-beat.alllost  { background: var(--warn-lt); color: var(--warn); }
+.script-action { color: var(--n2); margin: 6px 0; font-family: inherit; font-size: 12px; line-height: 1.7; }
+.script-char  { text-align: center; font-weight: 700; color: var(--n0); margin: 12px 0 0; font-family: inherit; font-size: 12px; }
+.script-dialog { margin: 0 48px 8px; color: var(--n1); font-family: inherit; font-size: 12px; }
+.script-paren  { margin: 0 64px 2px; color: var(--muted); font-style: italic; font-family: inherit; font-size: 11px; }
+.script-note { background: var(--warn-lt); border: 1px solid oklch(72% 0.15 72 / .3); border-radius: var(--r-md); padding: 9px 12px; margin: 10px 0; font-family: var(--font); font-size: 11px; color: oklch(88% 0.05 72); display: flex; gap: 8px; line-height: 1.55; }
+.script-note-icon { flex-shrink: 0; }
+.script-search { width: 100%; margin-bottom: 10px; padding: 7px 10px; background: var(--raised); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--body); font: 13px var(--font); }
+.script-search:focus { outline: none; border-color: var(--acc); }
+.script-toc { margin-bottom: 12px; }
+.script-toc summary { font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; padding: 4px 0; }
+.script-toc summary:hover { color: var(--acc); }
+.script-toc ul { margin: 6px 0 0 10px; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.script-toc li a { font-size: 11px; color: var(--muted); text-decoration: none; }
+.script-toc li a:hover { color: var(--acc); }
+mark { background: oklch(72% 0.15 72 / .3); color: inherit; border-radius: 2px; }
+.script-source { font-size: 10px; color: var(--muted); text-align: right; margin-top: 16px; padding-top: 8px; border-top: 1px solid var(--border); font-family: var(--font); }
 @media (max-width: 780px) {
   .app { grid-template-columns: 1fr; }
   .left-panel { height: auto; position: static; }
@@ -391,6 +418,7 @@ header {
       <button class="panel-tab" onclick="switchTab('structure')">🏗 Структура</button>
       <button class="panel-tab" onclick="switchTab('scenes')">🎬 Сцены</button>
       <button class="panel-tab" onclick="switchTab('setups')">🔗 Setup</button>
+      <button class="panel-tab" onclick="switchTab('script')">📖 Сценарий</button>
     </div>
     <div class="panel-body" id="panelBody">
       <!-- rendered by JS -->
@@ -556,6 +584,7 @@ function render() {
     case 'structure': renderStructure(); break;
     case 'scenes':    renderScenes();    break;
     case 'setups':    renderSetups();    break;
+    case 'script':    renderScript();    break;
   }
   renderAnalysis();
 }
@@ -563,7 +592,7 @@ function render() {
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.panel-tab').forEach((t, i) => {
-    const tabs = ['heroes','structure','scenes','setups'];
+    const tabs = ['heroes','structure','scenes','setups','script'];
     t.classList.toggle('active', tabs[i] === tab);
   });
   render();
@@ -1061,6 +1090,135 @@ function closeTooltip(e) {
     document.getElementById('tooltipOverlay').classList.remove('open');
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTooltip({}); });
+
+/* ══════════════════════════════════════════
+   SCRIPT READER DATA
+══════════════════════════════════════════ */
+const KASABLANKA = [
+  { act: 1, label: 'АКТ I — Завязка (0–25%)', cls: 'a1' },
+  { slug: 'ОБЫЧНЫЙ МИР — КАСАБЛАНКА, 1941',
+    action: 'Касабланка — перевалочный пункт для тысяч беженцев. Все хотят уехать в Лиссабон, оттуда в Америку. Немецкие офицеры контролируют город через французскую колониальную полицию.' },
+  { slug: "КАФЕ RIC'S CAFÉ AMÉRICAIN",
+    action: 'Рик Блейн — владелец самого популярного заведения в городе. Он никому не помогает, ни за кого не заступается.',
+    note: { icon: '🎭', text: 'ЛОЖЬ ГЕРОЯ: «Я не тороплюсь ни за кого умирать.» Рик убеждён, что нейтралитет — мудрость. На самом деле он защищается от боли после Парижа.' } },
+  { slug: 'УГАРТ ПРЯЧЕТ ТРАНЗИТНЫЕ ВИЗЫ У РИКА', beat: 'incident', beatLabel: 'ИНЦИДЕНТ ~10%',
+    action: 'Угарт передаёт Рику два похищенных транзитных письма. Рик соглашается спрятать их. Угарта немедленно арестовывают.',
+    note: { icon: '💥', text: 'ИНЦИДЕНТ (10%): Рик впутан — письма в его руках. Отныне он не просто наблюдатель. Точка невозврата.' } },
+  { slug: 'ВХОДИТ ИЛЗА ЛУНД',
+    action: 'В кафе появляется Илза с Виктором Лазло — известным чешским борцом Сопротивления. Рик видит её впервые после Парижа.',
+    dialog: [{ char: 'РИК', paren: 'Сэму, тихо', text: 'Из всех кафе во всех городах мира она входит именно в моё.' }] },
+  { slug: 'ФЛЭШБЭК: ПАРИЖ',
+    action: 'Рик и Илза были влюблены. В день, когда немцы вошли в Париж, она не пришла на вокзал. Только записка: «Не жди меня».',
+    note: { icon: '💔', text: 'РАНА, СОЗДАВШАЯ ЛОЖЬ: без Парижа нет нейтральности. Рик не циник от природы — он человек, которого предали в момент наибольшей уязвимости.' } },
+  { act: 2, label: 'АКТ II — Противодействие (25–75%)', cls: 'a2' },
+  { slug: 'ЛАЗЛО ПРОСИТ ПРОДАТЬ ПИСЬМА',
+    action: 'Лазло узнаёт, что письма у Рика. Он приходит с деловым предложением. Рик отказывает без объяснений.',
+    dialog: [
+      { char: 'ЛАЗЛО', text: 'Мистер Блейн, я слышал, что у вас есть письма Угарта.' },
+      { char: 'РИК', text: 'Я слышал многое. Это не значит, что всё правда.' }],
+    note: { icon: '🎯', text: 'ЦЕЛЬ СЦЕНЫ: Лазло — получить письма. ПРЕПЯТСТВИЕ: Рик непробиваем. ИСХОД: «Нет» — но зритель понимает: за отказом стоит Илза.' } },
+  { slug: 'ИЛЗА ПРИХОДИТ С ПИСТОЛЕТОМ',
+    action: 'Илза приходит к Рику одна, ночью. Сначала просит. Потом достаёт пистолет.',
+    dialog: [
+      { char: 'ИЛЗА', text: 'Отдай письма. Или я выстрелю.' },
+      { char: 'РИК', text: 'Стреляй. Ты окажешь мне услугу.' }],
+    note: { icon: '⚡', text: 'ИСХОД «НЕТ, И»: Илза не получила письма — и теперь рыдает. Это хуже, чем если бы она осталась холодной.' } },
+  { slug: 'ИЛЗА РАССКАЗЫВАЕТ ПРАВДУ О ПАРИЖЕ', beat: 'midpoint', beatLabel: 'МИДПОИНТ ~50%',
+    action: 'Илза признаётся: когда они расставались, её муж Лазло был жив — она думала, что он погиб. Это был не предательский выбор, а невозможный.',
+    dialog: [
+      { char: 'ИЛЗА', text: 'Я хотела сказать тебе. Но у меня не было сил.' },
+      { char: 'РИК', paren: 'после паузы', text: 'Почему ты не сказала мне тогда?' }],
+    note: { icon: '🔄', text: 'МИДПОИНТ (50%): Рик узнаёт правду. Он больше не жертва предательства — он человек, которому нужно сделать невозможный выбор. Правила изменились.' } },
+  { slug: 'ШТРАССЕР ДАВИТ НА РИКА',
+    action: 'Немецкий майор прямо говорит Рику: помогите нам остановить Лазло — или пожалеете.',
+    dialog: [
+      { char: 'ШТРАССЕР', text: 'В Касабланке случаются неприятные вещи с людьми, которые выбирают не ту сторону.' },
+      { char: 'РИК', text: 'Я уже выбрал сторону. Свою.' }] },
+  { slug: 'РЕНОЛЬТ ЗАКРЫВАЕТ КАФЕ',
+    action: 'Капитан Ренольт закрывает заведение Рика — официально за азартные игры.',
+    dialog: [
+      { char: 'РЕНОЛЬТ', text: 'Я потрясён — здесь идёт игра!' },
+      { char: 'КРУПЬЕ', paren: 'тихо', text: 'Ваш выигрыш, капитан.' }],
+    note: { icon: '⚖', text: 'КАЧЕЛИ ВНИЗ: Рик теряет кафе — главный источник контроля. Давление перед низшей точкой.' } },
+  { act: 3, label: 'АКТ III — Развязка (75–100%)', cls: 'a3' },
+  { slug: 'ЛАЗЛО АРЕСТОВАН. ВСЁ ПОТЕРЯНО', beat: 'alllost', beatLabel: 'ВСЁ ПОТЕРЯНО ~75%',
+    action: 'Лазло арестован. Письма у Рика. Кажется, он готов сделать сделку с Ренольтом: Лазло немцам — в обмен на свободу для себя и Илзы.',
+    note: { icon: '🕳', text: 'НИЗШАЯ ТОЧКА: миссия провалена, любовь невозможна, кафе закрыто. Рик, кажется, выбирает личное счастье — то есть предаёт всё. Старая стратегия нейтралитета привела только к потерям.' } },
+  { slug: 'АЭРОДРОМ НОЧЬЮ. ФИНАЛЬНЫЙ ВЫБОР',
+    action: 'На взлётном поле Рик достаёт письма. Но отдаёт их Илзе и Лазло — оба должны улететь. Он остаётся.',
+    dialog: [
+      { char: 'ИЛЗА', text: 'Но что будет с тобой?' },
+      { char: 'РИК', text: 'Тебе не придётся беспокоиться об этом.' },
+      { char: 'ИЛЗА', text: 'Я не могу уехать, зная—' },
+      { char: 'РИК', text: 'Ты уже знаешь ответ. Ты всегда знала.' }],
+    note: { icon: '✨', text: 'РАЗРУШЕНИЕ ЛЖИ: «Я не тороплюсь ни за кого умирать» — уничтожено поступком. Этот выбор был невозможен для Рика в начале. В этом и есть арка.' } },
+  { slug: 'ШТРАССЕР ПОЯВЛЯЕТСЯ — РИК СТРЕЛЯЕТ',
+    action: 'Штрассер пытается остановить самолёт. Рик стреляет первым. Самолёт улетает.' },
+  { slug: 'ФИНАЛ: НОВОЕ РАВНОВЕСИЕ',
+    action: 'Ренольт прикрывает Рика. Они уходят вдвоём.',
+    dialog: [{ char: 'РИК', text: 'Луи, мне кажется, это начало прекрасной дружбы.' }],
+    note: { icon: '🎬', text: 'НОВОЕ РАВНОВЕСИЕ: Рик не получил Илзу, но получил то, в чём нуждался — смысл, принадлежность, себя. Нейтралитет мёртв. Нужда (NEED) разрешена.' } },
+];
+
+function renderScript() {
+  const el = document.getElementById('panelBody');
+  if (!el) return;
+  const slugs = KASABLANKA.filter(s => s.slug).map(s => s.slug);
+  const toc = slugs.map(s =>
+    '<li><a href="#" onclick="scrollToSlug(event,' + JSON.stringify(s) + ')">' + esc(s) + '</a></li>'
+  ).join('');
+
+  let body = '';
+  for (const s of KASABLANKA) {
+    if (s.act) {
+      body += '<div class="script-act"><span class="script-act-label ' + s.cls + '">' + esc(s.label) + '</span></div>';
+      continue;
+    }
+    const beatHtml = s.beat ? ' <span class="slug-beat ' + s.beat + '">' + esc(s.beatLabel) + '</span>' : '';
+    body += '<div class="script-slug" data-slug="' + esc(s.slug) + '">' + esc(s.slug) + beatHtml + '</div>';
+    if (s.note) body += '<div class="script-note"><span class="script-note-icon">' + s.note.icon + '</span><span>' + esc(s.note.text) + '</span></div>';
+    if (s.action) body += '<p class="script-action">' + esc(s.action) + '</p>';
+    if (s.dialog) {
+      for (const d of s.dialog) {
+        body += '<div class="script-char">' + esc(d.char || '') + '</div>';
+        if (d.paren) body += '<div class="script-paren">(' + esc(d.paren) + ')</div>';
+        if (d.text) body += '<div class="script-dialog">' + esc(d.text) + '</div>';
+      }
+    }
+  }
+
+  el.innerHTML =
+    '<input class="script-search" placeholder="🔍 Поиск по сценарию…" oninput="filterScript(this.value)">' +
+    '<details class="script-toc"><summary>📋 Содержание (' + slugs.length + ' сцен)</summary><ul>' + toc + '</ul></details>' +
+    '<div id="scriptBody" class="script-reader">' + body + '</div>' +
+    '<div class="script-source">Касабланка (1942) — реж. Майкл Кёртис. Краткое изложение для учебных целей.</div>';
+}
+
+function filterScript(q) {
+  var body = document.getElementById('scriptBody');
+  if (!body) return;
+  var h = body.innerHTML;
+  h = h.split('<mark>').join('').split('<' + '/mark>').join('');
+  if (!q.trim()) { body.innerHTML = h; return; }
+  var out = '';
+  for (var i = 0; i < q.length; i++) {
+    var c = q[i];
+    if (c === '.' || c === '+' || c === '*' || c === '?'
+     || c === '^' || c === '$' || c === '{' || c === '}'
+     || c === '(' || c === ')' || c === '|'
+     || c === '[' || c === ']') {
+      out += '\\' + c;
+    } else {
+      out += c;
+    }
+  }
+  body.innerHTML = h.replace(new RegExp('(' + out + ')', 'gi'), '<mark>$1</mark>');
+}
+function scrollToSlug(e, slug) {
+  e.preventDefault();
+  const el = document.querySelector('[data-slug="' + slug.replace(/"/g, '\"') + '"]');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 /* ══════════════════════════════════════════
    SAVE / LOAD
