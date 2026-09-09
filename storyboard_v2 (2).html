@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Раскадровка v2</title>
+<style>
+:root {
+  /* Neutral ramp */
+  --n0:  oklch(98% 0.004 250);
+  --n1:  oklch(95% 0.006 250);
+  --n2:  oklch(90% 0.008 250);
+  --n3:  oklch(82% 0.010 250);
+  --n4:  oklch(65% 0.010 250);
+  --n5:  oklch(48% 0.010 250);
+  --n6:  oklch(32% 0.010 250);
+  --n7:  oklch(20% 0.010 250);
+  --n8:  oklch(13% 0.008 250);
+
+  /* Roles */
+  --bg:        var(--n1);
+  --surface:   var(--n0);
+  --raised:    oklch(97% 0.005 250);
+  --border:    var(--n2);
+  --border-md: var(--n3);
+  --muted:     var(--n4);
+  --body:      var(--n8);
+
+  /* Accent — indigo */
+  --acc:    oklch(56% 0.19 264);
+  --acc-lt: oklch(95% 0.05 264);
+  --acc-dk: oklch(42% 0.19 264);
+
+  /* Semantic */
+  --ok:       oklch(54% 0.16 154);
+  --ok-lt:    oklch(95% 0.05 154);
+  --warn:     oklch(62% 0.17  72);
+  --warn-lt:  oklch(96% 0.05  72);
+  --danger:   oklch(56% 0.20  25);
+  --danger-lt:oklch(96% 0.05  25);
+
+  /* Plan colours */
+  --dp:  oklch(60% 0.20 320);  /* Детальный */
+  --kp:  oklch(58% 0.20 264);  /* Крупный */
+  --sp1: oklch(56% 0.18 200);  /* 1-й средний */
+  --sp2: oklch(54% 0.17 154);  /* 2-й средний */
+  --op:  oklch(62% 0.17  72);  /* Общий */
+  --dlp: oklch(56% 0.19  25);  /* Дальний */
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+
+  --shadow-sm: 0 1px 3px oklch(0% 0 0 / .07), 0 0 0 1px var(--border);
+  --shadow-md: 0 4px 16px oklch(0% 0 0 / .10), 0 0 0 1px var(--border);
+  --shadow-lg: 0 8px 32px oklch(0% 0 0 / .13), 0 0 0 1px var(--border);
+
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --trans: .15s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--body);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 3px; }
+
+/* ── Utils ── */
+.sr-only { position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+
+/* ── Header ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky; top: 0; z-index: 200;
+}
+.logo { font-size: 15px; font-weight: 700; letter-spacing: -.4px; display:flex;gap:8px;align-items:center; }
+.logo-icon { font-size: 20px; }
+.spacer { flex: 1; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 34px; border-radius: var(--r-sm);
+  font: 500 13px/1 var(--font); cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--body); transition: background var(--trans), box-shadow var(--trans), border-color var(--trans);
+  white-space: nowrap;
+}
+.btn:hover  { background: var(--raised); border-color: var(--border-md); }
+.btn:active { background: var(--border); }
+.btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.btn-primary { background: var(--acc); color: #fff; border-color: var(--acc-dk); }
+.btn-primary:hover { background: var(--acc-dk); }
+.btn-danger  { color: var(--danger); }
+.btn-danger:hover { background: var(--danger-lt); border-color: var(--danger); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover { background: var(--raised); border-color: var(--border); }
+.btn-icon { width: 34px; padding: 0; justify-content: center; font-size: 16px; }
+
+/* ── Main layout ── */
+main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc(100vh - 52px); }
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  height: calc(100vh - 52px);
+  position: sticky;
+  top: 52px;
+}
+.sidebar-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-header h2 { font-size: 13px; font-weight: 600; flex: 1; }
+.sidebar-body { flex: 1; overflow-y: auto; padding: 12px; }
+
+/* ── Library card ── */
+.lib-card {
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow var(--trans), border-color var(--trans);
+  cursor: grab;
+  position: relative;
+}
+.lib-card:active { cursor: grabbing; }
+.lib-card:hover  { box-shadow: var(--shadow-md); border-color: var(--border-md); }
+.lib-card.dragging { opacity: .35; }
+.lib-card.used  { opacity: .45; cursor: default; pointer-events: none; }
+
+.lib-card-img {
+  width: 100%; height: 110px;
+  background: var(--n2);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative;
+  cursor: pointer;
+}
+.lib-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-card-img .img-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 11px; text-align: center; padding: 8px;
+  pointer-events: none;
+}
+.lib-card-img .img-placeholder .cam { font-size: 28px; }
+.lib-card-img:hover .img-overlay { opacity: 1; }
+.img-overlay {
+  position: absolute; inset: 0;
+  background: oklch(0% 0 0 / .45);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--trans);
+  color: #fff; font-size: 12px; font-weight: 600; gap: 6px;
+  pointer-events: none;
+}
+.lib-card-img input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+.lib-card-body { padding: 10px 10px 8px; }
+.lib-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.lib-card-num  { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: .4px; }
+
+.plan-select-wrap { flex: 1; }
+.plan-select {
+  width: 100%; padding: 3px 8px; font: 500 11px var(--font);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--body); cursor: pointer;
+  transition: border-color var(--trans);
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239ca3a0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+.plan-select:focus { outline: 2px solid var(--acc); outline-offset: 1px; border-color: var(--acc); }
+
+.lib-card-title {
+  font-size: 12px; font-weight: 600; margin-bottom: 3px;
+  border: none; background: transparent; width: 100%;
+  font-family: var(--font); color: var(--body); padding: 0;
+}
+.lib-card-title:focus { outline: none; border-bottom: 1.5px solid var(--acc); }
+
+.lib-card-desc {
+  font-size: 11px; color: var(--muted); width: 100%;
+  border: none; background: transparent; resize: none;
+  font-family: var(--font); line-height: 1.45; padding: 0;
+  min-height: 32px;
+}
+.lib-card-desc:focus { outline: none; border-bottom: 1.5px solid var(--acc); color: var(--body); }
+
+.lib-card-actions {
+  padding: 6px 10px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── Add card ── */
+.add-card-btn {
+  width: 100%; padding: 10px;
+  border: 2px dashed var(--border-md);
+  border-radius: var(--r-md);
+  background: transparent; cursor: pointer;
+  font: 500 13px var(--font); color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: border-color var(--trans), color var(--trans), background var(--trans);
+}
+.add-card-btn:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-lt); }
+.add-card-btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ── Right panel ── */
+.right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Timeline section ── */
+.tl-section {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px 0;
+}
+.tl-section-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.tl-section-header h2 { font-size: 13px; font-weight: 600; flex: 1; }
+
+.timeline-scroll { overflow-x: auto; padding-bottom: 16px; }
+.timeline {
+  display: flex; gap: 0; align-items: flex-start;
+  min-width: max-content;
+}
+
+/* ── Timeline slot ── */
+.tl-slot-wrap { display: flex; align-items: flex-start; }
+
+.tl-slot {
+  width: 160px; flex-shrink: 0;
+  border: 2px dashed var(--border-md);
+  border-radius: var(--r-md);
+  min-height: 220px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--raised);
+  transition: border-color var(--trans), background var(--trans), box-shadow var(--trans);
+  position: relative;
+}
+.tl-slot.has-card  { border-style: solid; border-color: var(--border); background: var(--surface); justify-content: flex-start; }
+.tl-slot.drag-over { border-color: var(--acc); background: var(--acc-lt); box-shadow: 0 0 0 3px var(--acc-lt); }
+
+.tl-slot-num {
+  position: absolute; top: 7px; left: 9px;
+  font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: .4px;
+}
+.tl-empty-hint {
+  font-size: 11px; color: var(--muted); text-align: center; line-height: 1.5;
+  padding: 8px; pointer-events: none;
+}
+
+/* ── Timeline card ── */
+.tl-card {
+  width: 100%; display: flex; flex-direction: column;
+  cursor: grab; padding-top: 24px;
+}
+.tl-card:active { cursor: grabbing; }
+
+.tl-card-img {
+  width: 100%; height: 90px; overflow: hidden;
+  background: var(--n2);
+  display: flex; align-items: center; justify-content: center;
+}
+.tl-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tl-card-img .tl-img-ph { font-size: 24px; color: var(--n3); }
+
+.tl-card-info { padding: 8px 9px 6px; }
+.tl-card-title { font-size: 11px; font-weight: 600; margin-bottom: 3px; line-height: 1.3; }
+.tl-card-desc  { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+.tl-card-footer {
+  padding: 5px 9px 7px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border); margin-top: auto;
+}
+
+.tl-remove {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: none; cursor: pointer;
+  color: var(--muted); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--trans), color var(--trans);
+}
+.tl-remove:hover { background: var(--danger-lt); color: var(--danger); }
+.tl-remove:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* ── Connector ── */
+.tl-connector {
+  width: 40px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 100px; gap: 4px;
+  position: relative;
+}
+.conn-line {
+  width: 3px; height: 40px; border-radius: 2px;
+  background: var(--border);
+  transition: background var(--trans);
+}
+.conn-chip {
+  padding: 2px 7px; border-radius: 20px;
+  font-size: 10px; font-weight: 700;
+  white-space: nowrap;
+  cursor: default;
+}
+.conn-ok   .conn-line  { background: var(--ok); }
+.conn-ok   .conn-chip  { background: var(--ok-lt);    color: var(--ok);     }
+.conn-warn .conn-line  { background: var(--warn); }
+.conn-warn .conn-chip  { background: var(--warn-lt);  color: var(--warn);   }
+.conn-bad  .conn-line  { background: var(--danger); }
+.conn-bad  .conn-chip  { background: var(--danger-lt);color: var(--danger); }
+
+/* tooltip on chip */
+.conn-chip { position: relative; }
+.conn-chip::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--n7); color: var(--n0);
+  font-size: 10px; font-weight: 400; white-space: normal; width: 160px;
+  padding: 5px 8px; border-radius: var(--r-sm);
+  line-height: 1.4; text-align: left;
+  opacity: 0; pointer-events: none; transition: opacity .12s;
+  z-index: 300;
+}
+.conn-chip:hover::after { opacity: 1; }
+
+/* ── Analysis bar ── */
+.analysis {
+  flex: 1; overflow-y: auto;
+  padding: 18px 20px;
+}
+.analysis h2 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+.analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 12px 14px;
+}
+.stat-card .stat-val { font-size: 24px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-card .stat-lbl { font-size: 11px; color: var(--muted); }
+.stat-ok     .stat-val { color: var(--ok);     }
+.stat-warn   .stat-val { color: var(--warn);   }
+.stat-danger .stat-val { color: var(--danger); }
+.stat-neutral .stat-val { color: var(--acc);   }
+
+.issue-list { display: flex; flex-direction: column; gap: 8px; }
+.issue-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px 12px;
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 12px;
+}
+.issue-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.issue-text { line-height: 1.45; }
+.issue-text strong { display: block; margin-bottom: 2px; }
+
+/* ── Legend ── */
+.legend-section { padding: 14px 16px; border-top: 1px solid var(--border); }
+.legend-section h3 { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.legend-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; color: #fff;
+}
+
+/* ── Plan badge ── */
+.plan-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── Modal (image expand) ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: oklch(0% 0 0 / .7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 500; opacity: 0; pointer-events: none;
+  transition: opacity var(--trans);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-box { max-width: 90vw; max-height: 90vh; }
+.modal-box img { max-width: 100%; max-height: 90vh; border-radius: var(--r-md); display: block; }
+
+@media (max-width: 860px) {
+  main { grid-template-columns: 1fr; }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 55vh; }
+  .analysis-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span class="logo-icon">🎬</span> Раскадровка <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:2px">v2</span></div>
+  <div class="spacer"></div>
+  <button class="btn" onclick="clearTimeline()">↺ Очистить таймлайн</button>
+  <button class="btn btn-primary" onclick="addShot()">+ Новый кадр</button>
+</header>
+
+<main>
+  <!-- Sidebar: shot library -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Банк кадров</h2>
+      <span style="font-size:11px;color:var(--muted)" id="libCount"></span>
+    </div>
+
+    <div class="legend-section">
+      <h3>Планы (российская система)</h3>
+      <div class="legend-row" id="legendRow"></div>
+    </div>
+
+    <div class="sidebar-body" id="shotLibrary"></div>
+  </aside>
+
+  <!-- Right: timeline + analysis -->
+  <div class="right-panel">
+    <div class="tl-section">
+      <div class="tl-section-header">
+        <h2>Таймлайн</h2>
+        <span style="font-size:11px;color:var(--muted)" id="tlCount"></span>
+      </div>
+      <div class="timeline-scroll">
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </div>
+
+    <div class="analysis">
+      <h2>Анализ совместимости</h2>
+      <div class="analysis-grid" id="statsGrid"></div>
+      <div class="issue-list" id="issueList"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Image expand modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <img id="modalImg" src="" alt="Кадр">
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   PLAN SYSTEM  (Russian / VGIK)
+══════════════════════════════════════════ */
+const PLANS = [
+  { id:'ДП',  label:'Детальный',       color:'#a855f7', level:1 },
+  { id:'КП',  label:'Крупный',         color:'#6366f1', level:2 },
+  { id:'1СП', label:'1-й средний',     color:'#0ea5e9', level:3 },
+  { id:'2СП', label:'2-й средний',     color:'#10b981', level:4 },
+  { id:'ОП',  label:'Общий',           color:'#f59e0b', level:5 },
+  { id:'ДлП', label:'Дальний',         color:'#ef4444', level:6 },
+];
+const planById = Object.fromEntries(PLANS.map(p=>[p.id,p]));
+
+const COMPAT_NOTES = {
+  ok:   'Плавный переход — соседние уровни.',
+  warn1:'Пропущен один уровень — ощущение рывка. Допустимо при акценте.',
+  warn2:'Пропущено два уровня — резкий монтажный скачок. Нужна врезка или обоснование.',
+  bad:  'Слишком большой скачок — дезориентирует зрителя. Добавь промежуточный план.',
+};
+
+function getCompat(idA, idB) {
+  const a = planById[idA], b = planById[idB];
+  if (!a || !b) return null;
+  const diff = Math.abs(a.level - b.level);
+  if (diff === 0) return { level:'warn', note:'Один и тот же план рядом — jump cut риск. Смени ракурс или добавь врезку.' };
+  if (diff === 1) return { level:'ok',   note: COMPAT_NOTES.ok };
+  if (diff === 2) return { level:'warn', note: COMPAT_NOTES.warn1 };
+  if (diff === 3) return { level:'warn', note: COMPAT_NOTES.warn2 };
+  return { level:'bad', note: COMPAT_NOTES.bad };
+}
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let shots = [
+  { id:'s1', title:'Дверь с чемоданом', desc:'А стоит у двери. Лицо спокойное.', plan:'2СП', img:null },
+  { id:'s2', title:'Разбитая чашка',    desc:'Б сидит за столом, чашка на полу.', plan:'ОП',  img:null },
+  { id:'s3', title:'Стол, конверт',     desc:'А и Б смотрят друг на друга.', plan:'2СП', img:null },
+  { id:'s4', title:'Телефон, окно',     desc:'Б один, держит телефон.', plan:'КП',  img:null },
+  { id:'s5', title:'Вход с цветами',    desc:'А входит, в руках цветы.', plan:'ОП',  img:null },
+  { id:'s6', title:'Билеты крупно',     desc:'Конверт вскрыт — два билета.', plan:'ДП',  img:null },
+];
+let timeline = []; // array of shot ids
+let dragId   = null;
+let dragFrom = null; // 'lib' | number (tl index)
+let idCounter = 7;
+
+/* ══════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════ */
+function uid() { return 's' + (idCounter++); }
+
+function planBadge(planId) {
+  const p = planById[planId];
+  if (!p) return '';
+  return `<span class="plan-badge" style="background:${p.color}">${p.id}</span>`;
+}
+
+/* ══════════════════════════════════════════
+   RENDER LEGEND
+══════════════════════════════════════════ */
+function renderLegend() {
+  document.getElementById('legendRow').innerHTML = PLANS.map(p=>
+    `<span class="legend-chip" style="background:${p.color}" title="${p.label}">${p.id} ${p.label}</span>`
+  ).join('');
+}
+
+/* ══════════════════════════════════════════
+   RENDER LIBRARY
+══════════════════════════════════════════ */
+function renderLibrary() {
+  const used = new Set(timeline);
+  const el = document.getElementById('shotLibrary');
+  document.getElementById('libCount').textContent = shots.length + ' кадров';
+
+  el.innerHTML = '';
+  shots.forEach((s, idx) => {
+    const isUsed = used.has(s.id);
+    const div = document.createElement('div');
+    div.className = 'lib-card' + (isUsed ? ' used' : '');
+    div.id = 'lib-' + s.id;
+    div.draggable = !isUsed;
+    if (!isUsed) {
+      div.addEventListener('dragstart', e => onLibDragStart(e, s.id));
+      div.addEventListener('dragend',   onDragEnd);
+    }
+
+    const imgSrc = s.img || '';
+    div.innerHTML = `
+      <div class="lib-card-img" role="button" tabindex="0" aria-label="Загрузить изображение для кадра ${idx+1}" title="Нажми для загрузки фото">
+        ${imgSrc
+          ? `<img src="${imgSrc}" alt="${s.title}">`
+          : `<div class="img-placeholder"><div class="cam">📷</div>Нажми для загрузки фото</div>`}
+        <div class="img-overlay">📂 Загрузить</div>
+        <input type="file" accept="image/*" onchange="onImgLoad(event,'${s.id}')" tabindex="-1">
+      </div>
+      <div class="lib-card-body">
+        <div class="lib-card-meta">
+          <span class="lib-card-num">№${idx+1}</span>
+          <div class="plan-select-wrap">
+            <select class="plan-select" onchange="setПлан('${s.id}',this.value)" aria-label="Тип плана">
+              ${PLANS.map(p=>`<option value="${p.id}" ${p.id===s.plan?'selected':''}>${p.id} — ${p.label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <input class="lib-card-title" type="text" value="${escHtml(s.title)}" placeholder="Название кадра"
+          onchange="setTitle('${s.id}',this.value)" aria-label="Название кадра">
+        <textarea class="lib-card-desc" placeholder="Описание…" rows="2"
+          onchange="setDesc('${s.id}',this.value)"
+          aria-label="Описание кадра">${escHtml(s.desc)}</textarea>
+      </div>
+      <div class="lib-card-actions">
+        ${planBadge(s.plan)}
+        <button class="btn btn-ghost btn-danger" style="height:28px;padding:0 10px;font-size:12px"
+          onclick="deleteShot('${s.id}')" aria-label="Удалить кадр">🗑 Удалить</button>
+      </div>`;
+    el.appendChild(div);
+
+    // expand image on click (not on the input)
+    div.querySelector('.lib-card-img').addEventListener('click', e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (s.img) openModal(s.img);
+    });
+    div.querySelector('.lib-card-img').addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') div.querySelector('input[type=file]').click();
+    });
+  });
+
+  // Add button at bottom
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-card-btn';
+  addBtn.innerHTML = '＋ Добавить кадр';
+  addBtn.onclick = addShot;
+  el.appendChild(addBtn);
+}
+
+/* ══════════════════════════════════════════
+   RENDER TIMELINE
+══════════════════════════════════════════ */
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  document.getElementById('tlCount').textContent = timeline.length + ' / 12';
+
+  const MAX = Math.max(timeline.length + 1, 4);
+  for (let i = 0; i < MAX; i++) {
+    const shotId = timeline[i] || null;
+    const shot   = shotId ? shots.find(s=>s.id===shotId) : null;
+
+    // connector (before each slot except first)
+    if (i > 0) {
+      const prevId  = timeline[i-1] || null;
+      const prevShot = prevId ? shots.find(s=>s.id===prevId) : null;
+      const wrap = document.createElement('div');
+      wrap.className = 'tl-connector';
+      if (prevShot && shot) {
+        const c = getCompat(prevShot.plan, shot.plan);
+        wrap.classList.add('conn-' + c.level);
+        const emoji = c.level==='ok' ? '✓' : c.level==='warn' ? '⚠' : '✕';
+        wrap.innerHTML = `<div class="conn-line"></div>
+          <div class="conn-chip" data-tip="${escHtml(c.note)}">${emoji}</div>`;
+      } else {
+        wrap.innerHTML = `<div class="conn-line"></div>`;
+      }
+      tl.appendChild(wrap);
+    }
+
+    // slot
+    const slot = document.createElement('div');
+    slot.className = 'tl-slot' + (shot ? ' has-card' : '');
+    slot.dataset.index = i;
+    slot.innerHTML = `<span class="tl-slot-num">${i+1}</span>`;
+
+    if (shot) {
+      const p = planById[shot.plan];
+      slot.innerHTML += `
+        <div class="tl-card" draggable="true">
+          <div class="tl-card-img">
+            ${shot.img
+              ? `<img src="${shot.img}" alt="${escHtml(shot.title)}" style="cursor:zoom-in" onclick="openModal('${shot.img}')">`
+              : `<div class="tl-img-ph">📷</div>`}
+          </div>
+          <div class="tl-card-info">
+            <div class="tl-card-title">${escHtml(shot.title)}</div>
+            <div class="tl-card-desc">${escHtml(shot.desc)}</div>
+          </div>
+          <div class="tl-card-footer">
+            ${planBadge(shot.plan)}
+            <button class="tl-remove" onclick="removeFromTl(${i})" title="Убрать из таймлайна" aria-label="Убрать кадр">×</button>
+          </div>
+        </div>`;
+
+      const card = slot.querySelector('.tl-card');
+      card.addEventListener('dragstart', e => onTlDragStart(e, i, shot.id));
+      card.addEventListener('dragend',   onDragEnd);
+    } else if (i <= timeline.length) {
+      slot.innerHTML += `<div class="tl-empty-hint">перетащи<br>кадр сюда</div>`;
+    }
+
+    slot.addEventListener('dragover',  e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop',      e => onSlotDrop(e, i));
+    tl.appendChild(slot);
+  }
+
+  renderAnalysis();
+}
+
+/* ══════════════════════════════════════════
+   RENDER ANALYSIS
+══════════════════════════════════════════ */
+function renderAnalysis() {
+  const filled  = timeline.filter(Boolean).length;
+  const issues  = [];
+  let okCount   = 0, warnCount = 0, badCount = 0;
+
+  for (let i = 0; i < timeline.length - 1; i++) {
+    const a = shots.find(s=>s.id===timeline[i]);
+    const b = shots.find(s=>s.id===timeline[i+1]);
+    if (!a || !b) continue;
+    const c = getCompat(a.plan, b.plan);
+    if (c.level === 'ok')   okCount++;
+    if (c.level === 'warn') { warnCount++; issues.push({pos:i, a, b, c}); }
+    if (c.level === 'bad')  { badCount++;  issues.push({pos:i, a, b, c}); }
+  }
+
+  const statsEl = document.getElementById('statsGrid');
+  const issEl   = document.getElementById('issueList');
+
+  statsEl.innerHTML = `
+    <div class="stat-card stat-neutral"><div class="stat-val">${filled}</div><div class="stat-lbl">Кадров в таймлайне</div></div>
+    <div class="stat-card ${badCount>0?'stat-danger':okCount>0?'stat-ok':''}">
+      <div class="stat-val">${badCount>0?'✕ '+badCount:okCount>0?'✓ '+okCount:'—'}</div>
+      <div class="stat-lbl">${badCount>0?'Проблемных перехода':okCount>0?'Плавных перехода':'Переходов'}</div>
+    </div>
+    <div class="stat-card ${warnCount>0?'stat-warn':''}">
+      <div class="stat-val">${warnCount || '—'}</div>
+      <div class="stat-lbl">Рискованных перехода</div>
+    </div>
+    <div class="stat-card stat-ok">
+      <div class="stat-val">${okCount}</div>
+      <div class="stat-lbl">Отличных перехода</div>
+    </div>`;
+
+  if (filled === 0) {
+    issEl.innerHTML = `<div class="issue-item"><span class="issue-icon">💡</span><div class="issue-text">Перетащи кадры в таймлайн — здесь появится анализ переходов по российской системе планов.</div></div>`;
+    return;
+  }
+  if (issues.length === 0 && filled > 1) {
+    issEl.innerHTML = `<div class="issue-item"><span class="issue-icon">✅</span><div class="issue-text"><strong>Все переходы плавные</strong>Отличный монтажный ряд — каждый переход между соседними уровнями планов.</div></div>`;
+    return;
+  }
+  if (issues.length === 0) {
+    issEl.innerHTML = `<div class="issue-item"><span class="issue-icon">💡</span><div class="issue-text">Добавь ещё кадры, чтобы проверить переходы.</div></div>`;
+    return;
+  }
+
+  issEl.innerHTML = issues.map(({pos, a, b, c}) => {
+    const icon  = c.level==='bad' ? '🔴' : '⚠️';
+    const badge = (shot) => `<span class="plan-badge" style="background:${planById[shot.plan].color}">${shot.plan}</span>`;
+    return `<div class="issue-item">
+      <span class="issue-icon">${icon}</span>
+      <div class="issue-text">
+        <strong>Позиция ${pos+1} → ${pos+2}: ${badge(a)} ${escHtml(a.title)} → ${badge(b)} ${escHtml(b.title)}</strong>
+        ${escHtml(c.note)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════
+   DRAG & DROP
+══════════════════════════════════════════ */
+function onLibDragStart(e, id) {
+  dragId = id; dragFrom = 'lib';
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  setTimeout(()=>{ const el=document.getElementById('lib-'+id); if(el) el.classList.add('dragging'); }, 0);
+}
+function onTlDragStart(e, idx, id) {
+  dragId = id; dragFrom = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.setData('fromIdx', String(idx));
+}
+function onDragEnd() {
+  dragId = null; dragFrom = null;
+  document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+}
+
+function onSlotDrop(e, toIdx) {
+  e.preventDefault();
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  const id = e.dataTransfer.getData('text/plain');
+  if (!id) return;
+
+  if (dragFrom === 'lib') {
+    // place in slot; if slot occupied push existing back (remove from that position)
+    const existingPos = timeline.indexOf(id);
+    if (existingPos !== -1) return; // already in TL
+
+    // ensure array is long enough
+    while (timeline.length <= toIdx) timeline.push(null);
+    const displaced = timeline[toIdx];
+    timeline[toIdx] = id;
+    // fill nulls
+    timeline = timeline.filter((x,i)=> i===toIdx || x !== null || i < timeline.length - 1);
+    // compact: remove trailing nulls
+    while (timeline.length && timeline[timeline.length-1] === null) timeline.pop();
+
+  } else if (typeof dragFrom === 'number') {
+    // reorder within TL
+    const fromIdx = dragFrom;
+    if (fromIdx === toIdx) return;
+    // ensure length
+    while (timeline.length <= Math.max(fromIdx, toIdx)) timeline.push(null);
+    const displaced = timeline[toIdx];
+    timeline[toIdx]   = timeline[fromIdx];
+    timeline[fromIdx] = displaced;
+    // compact
+    while (timeline.length && timeline[timeline.length-1] === null) timeline.pop();
+  }
+
+  renderLibrary();
+  renderTimeline();
+}
+
+/* ══════════════════════════════════════════
+   ACTIONS
+══════════════════════════════════════════ */
+function removeFromTl(idx) {
+  timeline.splice(idx, 1);
+  renderLibrary();
+  renderTimeline();
+}
+
+function clearTimeline() {
+  if (!timeline.length) return;
+  timeline = [];
+  renderLibrary();
+  renderTimeline();
+}
+
+function addShot() {
+  shots.push({ id: uid(), title: 'Новый кадр', desc: '', plan: '2СП', img: null });
+  renderLibrary();
+  renderTimeline();
+  // scroll to bottom of sidebar
+  const sb = document.getElementById('shotLibrary');
+  sb.scrollTop = sb.scrollHeight;
+}
+
+function deleteShot(id) {
+  shots = shots.filter(s => s.id !== id);
+  timeline = timeline.filter(x => x !== id);
+  renderLibrary();
+  renderTimeline();
+}
+
+function setTitle(id, val) {
+  const s = shots.find(s=>s.id===id); if(s) s.title = val;
+  renderTimeline();
+}
+function setDesc(id, val) {
+  const s = shots.find(s=>s.id===id); if(s) s.desc = val;
+  renderTimeline();
+}
+function setПлан(id, val) {
+  const s = shots.find(s=>s.id===id); if(s) s.plan = val;
+  renderLibrary();
+  renderTimeline();
+}
+
+function onImgLoad(e, id) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const s = shots.find(s=>s.id===id);
+    if (s) { s.img = ev.target.result; renderLibrary(); renderTimeline(); }
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ══════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════ */
+function openModal(src) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+/* ══════════════════════════════════════════
+   UTIL
+══════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+renderLegend();
+renderLibrary();
+renderTimeline();
+</script>
+</body>
+</html>
