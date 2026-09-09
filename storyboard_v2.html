@@ -406,6 +406,32 @@ main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc
 .modal-box { max-width: 90vw; max-height: 90vh; }
 .modal-box img { max-width: 100%; max-height: 90vh; border-radius: var(--r-md); display: block; }
 
+/* ── Header: save controls ── */
+.save-state {
+  font-size: 11px; font-weight: 600;
+  padding: 4px 11px; border-radius: 20px;
+  background: var(--raised); border: 1px solid var(--border);
+  color: var(--muted); white-space: nowrap;
+  max-width: 190px; overflow: hidden; text-overflow: ellipsis;
+}
+.save-state.dirty { color: var(--warn); border-color: var(--warn); background: var(--warn-lt); }
+.save-state.saved { color: var(--ok);   border-color: var(--ok);   background: var(--ok-lt); }
+.hdr-div { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--n7); color: var(--n0);
+  padding: 11px 20px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 500; max-width: 90vw;
+  box-shadow: 0 8px 28px oklch(0% 0 0 / .28);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 600;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 @media (max-width: 860px) {
   main { grid-template-columns: 1fr; }
   .sidebar { border-right: none; border-bottom: 1px solid var(--border); max-height: 55vh; }
@@ -418,9 +444,17 @@ main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc
 <header>
   <div class="logo"><span class="logo-icon">🎬</span> Раскадровка <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:2px">v2</span></div>
   <div class="spacer"></div>
+  <span id="saveState" class="save-state">—</span>
+  <button class="btn" onclick="importProject()">📂 Открыть</button>
+  <button class="btn" onclick="exportProject()">💾 Сохранить</button>
+  <span class="hdr-div"></span>
   <button class="btn" onclick="clearTimeline()">↺ Очистить таймлайн</button>
   <button class="btn btn-primary" onclick="addShot()">+ Новый кадр</button>
+  <input type="file" id="importInput" accept=".json,application/json"
+         style="display:none" onchange="onImportFile(event)">
 </header>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <main>
   <!-- Sidebar: shot library -->
@@ -791,6 +825,7 @@ function onSlotDrop(e, toIdx) {
 
   renderLibrary();
   renderTimeline();
+  markDirty();
 }
 
 /* ══════════════════════════════════════════
@@ -800,6 +835,7 @@ function removeFromTl(idx) {
   timeline.splice(idx, 1);
   renderLibrary();
   renderTimeline();
+  markDirty();
 }
 
 function clearTimeline() {
@@ -807,12 +843,14 @@ function clearTimeline() {
   timeline = [];
   renderLibrary();
   renderTimeline();
+  markDirty();
 }
 
 function addShot() {
   shots.push({ id: uid(), title: 'Новый кадр', desc: '', plan: '2СП', img: null });
   renderLibrary();
   renderTimeline();
+  markDirty();
   // scroll to bottom of sidebar
   const sb = document.getElementById('shotLibrary');
   sb.scrollTop = sb.scrollHeight;
@@ -823,20 +861,24 @@ function deleteShot(id) {
   timeline = timeline.filter(x => x !== id);
   renderLibrary();
   renderTimeline();
+  markDirty();
 }
 
 function setTitle(id, val) {
   const s = shots.find(s=>s.id===id); if(s) s.title = val;
   renderTimeline();
+  markDirty();
 }
 function setDesc(id, val) {
   const s = shots.find(s=>s.id===id); if(s) s.desc = val;
   renderTimeline();
+  markDirty();
 }
 function setПлан(id, val) {
   const s = shots.find(s=>s.id===id); if(s) s.plan = val;
   renderLibrary();
   renderTimeline();
+  markDirty();
 }
 
 function onImgLoad(e, id) {
@@ -845,7 +887,7 @@ function onImgLoad(e, id) {
   const reader = new FileReader();
   reader.onload = ev => {
     const s = shots.find(s=>s.id===id);
-    if (s) { s.img = ev.target.result; renderLibrary(); renderTimeline(); }
+    if (s) { s.img = ev.target.result; renderLibrary(); renderTimeline(); markDirty(); }
   };
   reader.readAsDataURL(file);
 }
@@ -870,11 +912,169 @@ function escHtml(s) {
 }
 
 /* ══════════════════════════════════════════
+   SAVE / LOAD  ·  JSON export + autosave
+══════════════════════════════════════════ */
+const LS_KEY  = 'bezb_storyboard_autosave';
+const FORMAT  = 'bezb.storyboard';
+const FVER    = 2;
+let projectName = 'Без названия';
+let dirty = false;
+
+function buildProject() {
+  return {
+    format: FORMAT,
+    version: FVER,
+    name: projectName,
+    savedAt: new Date().toISOString(),
+    idCounter: idCounter,
+    shots: shots,
+    timeline: timeline
+  };
+}
+
+function applyProject(data) {
+  if (!data || data.format !== FORMAT) {
+    toast('⚠️ Это не файл проекта раскадровки');
+    return false;
+  }
+  shots = Array.isArray(data.shots) ? data.shots : [];
+  timeline = Array.isArray(data.timeline)
+    ? data.timeline.filter(id => shots.some(s => s.id === id))
+    : [];
+  idCounter   = data.idCounter || shots.length + 1;
+  projectName = data.name || 'Без названия';
+  renderLibrary();
+  renderTimeline();
+  return true;
+}
+
+/* ── Export .json ── */
+function exportProject() {
+  const name = prompt('Название проекта:', projectName);
+  if (name === null) return;
+  projectName = (name || '').trim() || 'Без названия';
+
+  const json = JSON.stringify(buildProject(), null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const safe = projectName.replace(/[^\wа-яА-ЯёЁ \-]/g, '').trim() || 'раскадровка';
+  const day  = new Date().toISOString().slice(0, 10);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safe + '_' + day + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  autosave();
+  markSaved();
+  toast('💾 Сохранён файл «' + a.download + '»');
+}
+
+/* ── Import .json ── */
+function importProject() {
+  if (dirty && !confirm('Текущий проект не сохранён. Загрузить другой?')) return;
+  document.getElementById('importInput').click();
+}
+
+function onImportFile(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      if (applyProject(JSON.parse(ev.target.result))) {
+        autosave();
+        markSaved();
+        toast('📂 Загружен проект «' + projectName + '»');
+      }
+    } catch (err) {
+      toast('⚠️ Файл повреждён — не удалось прочитать JSON');
+    }
+  };
+  reader.onerror = () => toast('⚠️ Не удалось открыть файл');
+  reader.readAsText(file);
+}
+
+/* ── Autosave (localStorage) ── */
+let autosaveTimer = null;
+function autosave() {
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(buildProject()));
+    } catch (err) {
+      toast('⚠️ Автосохранение переполнено — сохрани проект в файл');
+    }
+  }, 400);
+}
+
+function loadAutosave() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data || data.format !== FORMAT) return false;
+    shots = Array.isArray(data.shots) ? data.shots : shots;
+    timeline = Array.isArray(data.timeline)
+      ? data.timeline.filter(id => shots.some(s => s.id === id))
+      : [];
+    idCounter   = data.idCounter || shots.length + 1;
+    projectName = data.name || 'Без названия';
+    return true;
+  } catch (err) { return false; }
+}
+
+/* ── Save-state indicator ── */
+function markDirty() {
+  dirty = true;
+  const el = document.getElementById('saveState');
+  if (el) { el.textContent = '● Не сохранено'; el.className = 'save-state dirty'; }
+  autosave();
+}
+
+function markSaved() {
+  dirty = false;
+  const el = document.getElementById('saveState');
+  if (el) { el.textContent = '✓ ' + projectName; el.className = 'save-state saved'; }
+}
+
+/* ── Toast ── */
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ── Keyboard: Ctrl/Cmd+S ── */
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    exportProject();
+  }
+});
+
+/* ── Guard unsaved work ── */
+window.addEventListener('beforeunload', e => {
+  if (dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ══════════════════════════════════════════
    INIT
 ══════════════════════════════════════════ */
 renderLegend();
+const restored = loadAutosave();
 renderLibrary();
 renderTimeline();
+markSaved();
+if (restored) toast('↩ Восстановлена последняя сессия');
 </script>
 </body>
 </html>
