@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Редактор сценария — BEZBproduction</title>
+<style>
+:root {
+  --n0: oklch(97% 0.004 240);
+  --n1: oklch(93% 0.006 240);
+  --n2: oklch(86% 0.008 240);
+  --n3: oklch(74% 0.010 240);
+  --n4: oklch(55% 0.010 240);
+  --n5: oklch(40% 0.010 240);
+  --n6: oklch(26% 0.012 240);
+  --n7: oklch(17% 0.012 240);
+  --n8: oklch(11% 0.010 240);
+
+  --bg:      var(--n7);
+  --surface: var(--n6);
+  --raised:  oklch(30% 0.012 240);
+  --border:  oklch(34% 0.012 240);
+  --muted:   var(--n4);
+  --body:    var(--n1);
+
+  --acc:     oklch(70% 0.14 195);
+  --acc-lt:  oklch(22% 0.06 195);
+  --acc-dk:  oklch(54% 0.14 195);
+
+  --ok:      oklch(68% 0.14 150);
+  --ok-lt:   oklch(20% 0.06 150);
+  --warn:    oklch(72% 0.15 72);
+  --warn-lt: oklch(20% 0.06 72);
+  --danger:  oklch(62% 0.18 25);
+  --danger-lt: oklch(20% 0.07 25);
+  --info:    oklch(68% 0.14 264);
+  --info-lt: oklch(20% 0.06 264);
+
+  --r-sm: 5px;
+  --r-md: 9px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --trans: .14s ease;
+  --shadow: 0 2px 12px oklch(0% 0 0 / .4), 0 0 0 1px var(--border);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg); color: var(--body); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Header ── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: oklch(12% 0.010 240 / .92); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px; height: 52px;
+  display: flex; align-items: center; gap: 14px;
+}
+.logo { font-size: 14px; font-weight: 800; color: var(--n0); display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.logo-icon { font-size: 18px; width: 30px; height: 30px; background: var(--acc); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo-sub { font-size: 10px; font-weight: 400; color: var(--muted); }
+.spacer { flex: 1; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 13px; height: 32px; border-radius: var(--r-sm);
+  font: 500 12px/1 var(--font); cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--body);
+  transition: background var(--trans), border-color var(--trans);
+  white-space: nowrap;
+}
+.btn:hover { background: var(--raised); border-color: oklch(42% 0.012 240); }
+.btn:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.btn-primary { background: var(--acc); color: #fff; border-color: var(--acc-dk); }
+.btn-primary:hover { background: var(--acc-dk); }
+.save-pill {
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+  background: var(--raised); border: 1px solid var(--border); color: var(--muted);
+}
+.save-pill.dirty { color: var(--warn); border-color: var(--warn); background: var(--warn-lt); }
+.save-pill.saved { color: var(--ok);   border-color: var(--ok);   background: var(--ok-lt); }
+
+/* ── Layout ── */
+.app { display: grid; grid-template-columns: 400px 1fr; min-height: calc(100vh - 52px); }
+
+/* ── Left panel ── */
+.left-panel {
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  height: calc(100vh - 52px); position: sticky; top: 52px; overflow: hidden;
+}
+.panel-tabs {
+  display: flex; border-bottom: 1px solid var(--border); background: var(--surface);
+}
+.panel-tab {
+  flex: 1; padding: 11px 8px; font: 500 12px var(--font); cursor: pointer;
+  border: none; background: transparent; color: var(--muted);
+  border-bottom: 2px solid transparent; transition: color var(--trans), border-color var(--trans);
+  text-align: center;
+}
+.panel-tab:hover { color: var(--body); }
+.panel-tab.active { color: var(--acc); border-bottom-color: var(--acc); }
+.panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* ── Right panel ── */
+.right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Sections ── */
+.section { margin-bottom: 24px; }
+.section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Form fields ── */
+.field { margin-bottom: 14px; }
+.field-head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+.field-label { font-size: 12px; font-weight: 600; color: var(--n1); }
+.field-hint { font-size: 11px; color: var(--muted); flex: 1; }
+
+.help-btn {
+  width: 18px; height: 18px; border-radius: 50%; border: none; cursor: pointer;
+  background: var(--warn-lt); color: var(--warn); font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background var(--trans), transform var(--trans);
+  line-height: 1;
+}
+.help-btn:hover { background: var(--warn); color: #fff; transform: scale(1.1); }
+
+.field input, .field textarea, .field select {
+  width: 100%; padding: 8px 10px;
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-sm); color: var(--body);
+  font: 14px/1.5 var(--font); transition: border-color var(--trans);
+  resize: vertical;
+}
+.field input:focus, .field textarea:focus, .field select:focus {
+  outline: none; border-color: var(--acc);
+}
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7280'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+
+/* ── Tooltip popup ── */
+.tooltip-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  background: oklch(0% 0 0 / .55);
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+}
+.tooltip-overlay.open { opacity: 1; pointer-events: all; }
+.tooltip-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); width: min(480px, 92vw);
+  box-shadow: 0 16px 48px oklch(0% 0 0 / .5);
+  overflow: hidden;
+}
+.tooltip-head {
+  background: var(--warn-lt); border-bottom: 1px solid var(--border);
+  padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+}
+.tooltip-head-icon { font-size: 20px; }
+.tooltip-head-title { font-size: 13px; font-weight: 700; color: var(--n0); flex: 1; }
+.tooltip-close {
+  width: 26px; height: 26px; border: none; cursor: pointer;
+  background: oklch(100% 0 0 / .08); color: var(--n1); border-radius: 6px;
+  font-size: 14px; display: flex; align-items: center; justify-content: center;
+  transition: background var(--trans);
+}
+.tooltip-close:hover { background: oklch(100% 0 0 / .16); }
+.tooltip-body { padding: 16px; }
+.tooltip-rule {
+  background: var(--acc-lt); border: 1px solid oklch(70% 0.14 195 / .25);
+  border-radius: var(--r-md); padding: 11px 13px; margin-bottom: 12px;
+  font-size: 12px; line-height: 1.6; color: var(--n1);
+}
+.tooltip-rule strong { color: var(--acc); }
+.tooltip-example {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 11px 13px;
+  font-size: 12px; line-height: 1.65;
+}
+.tooltip-example-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--warn); margin-bottom: 6px;
+}
+.tooltip-example-text { color: var(--n2); font-style: italic; }
+
+/* ── Hero card ── */
+.hero-card {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 14px; margin-bottom: 10px; position: relative;
+}
+.hero-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.hero-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: var(--acc-lt); border: 2px solid var(--acc);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.hero-name { font-size: 13px; font-weight: 700; color: var(--n0); }
+.hero-role { font-size: 11px; color: var(--muted); }
+.hero-del {
+  position: absolute; top: 10px; right: 10px;
+  width: 24px; height: 24px; border: none; cursor: pointer;
+  background: transparent; color: var(--muted); border-radius: 5px; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: background var(--trans), color var(--trans);
+}
+.hero-del:hover { background: var(--danger-lt); color: var(--danger); }
+
+/* ── Scene cards ── */
+.scene-card {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 14px; margin-bottom: 10px; position: relative;
+}
+.scene-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.scene-num {
+  font-size: 11px; font-weight: 700; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 2px 7px; color: var(--muted); flex-shrink: 0;
+}
+.scene-num.act1 { border-color: var(--ok);   color: var(--ok);   background: var(--ok-lt);   }
+.scene-num.act2 { border-color: var(--acc);  color: var(--acc);  background: var(--acc-lt);  }
+.scene-num.act3 { border-color: var(--warn); color: var(--warn); background: var(--warn-lt); }
+.scene-title-inp { flex: 1; background: transparent; border: none; color: var(--n0); font: 600 13px var(--font); padding: 0; }
+.scene-title-inp:focus { outline: none; border-bottom: 1px solid var(--acc); }
+.scene-del {
+  width: 24px; height: 24px; border: none; cursor: pointer;
+  background: transparent; color: var(--muted); border-radius: 5px; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: background var(--trans), color var(--trans);
+}
+.scene-del:hover { background: var(--danger-lt); color: var(--danger); }
+
+.scene-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.scene-field label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
+.scene-field input, .scene-field select, .scene-field textarea {
+  width: 100%; padding: 6px 8px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  color: var(--body); font: 12px/1.4 var(--font); resize: vertical;
+}
+.scene-field input:focus, .scene-field select:focus, .scene-field textarea:focus { outline: none; border-color: var(--acc); }
+.scene-field.full { grid-column: 1 / -1; }
+.charge-row { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; }
+.charge-label { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.charge-slider { flex: 1; appearance: none; height: 4px; background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+.charge-slider::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--acc); cursor: pointer; border: 2px solid var(--bg); }
+.charge-val { font-size: 12px; font-weight: 700; min-width: 28px; text-align: center; }
+.charge-val.pos { color: var(--ok); }
+.charge-val.neg { color: var(--danger); }
+.charge-val.neu { color: var(--muted); }
+.outcome-row { display: flex; gap: 6px; grid-column: 1 / -1; flex-wrap: wrap; }
+.outcome-btn {
+  font: 600 11px var(--font); padding: 4px 10px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  transition: all var(--trans);
+}
+.outcome-btn.active-yn  { border-color: var(--ok);   color: var(--ok);   background: var(--ok-lt);   }
+.outcome-btn.active-yb  { border-color: var(--warn);  color: var(--warn); background: var(--warn-lt); }
+.outcome-btn.active-nb  { border-color: var(--warn);  color: var(--warn); background: var(--warn-lt); }
+.outcome-btn.active-na  { border-color: var(--danger); color: var(--danger); background: var(--danger-lt); }
+.outcome-btn:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-lt); }
+
+/* ── Beat row for acts ── */
+.beat-row {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px 13px; margin-bottom: 8px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.beat-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.beat-name { font-size: 12px; font-weight: 700; color: var(--n0); margin-bottom: 3px; }
+.beat-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
+.beat-inp { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 6px 9px; color: var(--body); font: 12px/1.4 var(--font); resize: none; }
+.beat-inp:focus { outline: none; border-color: var(--acc); }
+.beat-pct { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; margin-left: auto; flex-shrink: 0; }
+.beat-pct.act1 { background: var(--ok-lt); color: var(--ok); }
+.beat-pct.act2 { background: var(--acc-lt); color: var(--acc); }
+.beat-pct.act3 { background: var(--warn-lt); color: var(--warn); }
+
+/* ── Setup items ── */
+.setup-item {
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 11px 13px; margin-bottom: 8px;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.setup-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.setup-dot.open   { background: var(--warn); }
+.setup-dot.closed { background: var(--ok); }
+.setup-content { flex: 1; }
+.setup-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+.setup-fields input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 5px 8px; color: var(--body); font: 12px var(--font); }
+.setup-fields input:focus { outline: none; border-color: var(--acc); }
+.setup-status { font-size: 11px; font-weight: 600; }
+.setup-status.open   { color: var(--warn); }
+.setup-status.closed { color: var(--ok); }
+.setup-del { width: 22px; height: 22px; border: none; cursor: pointer; background: transparent; color: var(--muted); border-radius: 4px; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: background var(--trans), color var(--trans); flex-shrink: 0; }
+.setup-del:hover { background: var(--danger-lt); color: var(--danger); }
+
+/* ── Analysis panel (right) ── */
+.analysis-bar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 14px 20px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+}
+.stat-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 14px; background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-md); min-width: 70px;
+}
+.stat-chip-val { font-size: 18px; font-weight: 700; color: var(--n0); line-height: 1; }
+.stat-chip-lbl { font-size: 10px; color: var(--muted); }
+.stat-chip.ok   { border-color: var(--ok);   }
+.stat-chip.warn { border-color: var(--warn);  }
+.stat-chip.bad  { border-color: var(--danger); }
+
+.chart-area { flex: 1; padding: 16px 20px 12px; overflow-y: auto; }
+.chart-title { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.wave-canvas { width: 100%; height: 180px; display: block; }
+
+/* ── Issues ── */
+.issues-list { padding: 0 20px 20px; }
+.issue-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px 13px; border-radius: var(--r-md);
+  margin-bottom: 7px; font-size: 12px; line-height: 1.55;
+}
+.issue-item.ok   { background: var(--ok-lt);   border: 1px solid oklch(68% 0.14 150 / .25); }
+.issue-item.warn { background: var(--warn-lt); border: 1px solid oklch(72% 0.15 72 / .25); }
+.issue-item.bad  { background: var(--danger-lt); border: 1px solid oklch(62% 0.18 25 / .25); }
+.issue-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(14px);
+  background: var(--n7); color: var(--n0); padding: 10px 18px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 500; box-shadow: var(--shadow);
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 600;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Add buttons ── */
+.add-row { display: flex; justify-content: center; }
+.add-btn {
+  width: 100%; padding: 9px; border: 2px dashed var(--border); border-radius: var(--r-md);
+  background: transparent; cursor: pointer; font: 500 12px var(--font); color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: border-color var(--trans), color var(--trans), background var(--trans);
+}
+.add-btn:hover { border-color: var(--acc); color: var(--acc); background: var(--acc-lt); }
+
+/* ── Kasablanka reference ── */
+.ref-band {
+  background: oklch(24% 0.04 50 / .55); border: 1px solid oklch(72% 0.15 72 / .3);
+  border-radius: var(--r-md); padding: 10px 13px; margin-bottom: 16px;
+  font-size: 11px; line-height: 1.6; color: oklch(88% 0.04 60);
+  display: flex; gap: 9px;
+}
+.ref-band-icon { font-size: 16px; flex-shrink: 0; }
+.ref-band strong { color: var(--warn); }
+
+@media (max-width: 780px) {
+  .app { grid-template-columns: 1fr; }
+  .left-panel { height: auto; position: static; }
+  .right-panel { min-height: 400px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">🎬</div>
+    <div>BEZBproduction <span class="logo-sub">Редактор сценария</span></div>
+  </a>
+  <div class="spacer"></div>
+  <span id="savePill" class="save-pill">—</span>
+  <button class="btn" onclick="importProject()">📂 Открыть</button>
+  <button class="btn" onclick="exportProject()">💾 Сохранить</button>
+  <input type="file" id="importInput" accept=".json" style="display:none" onchange="onImportFile(event)">
+</header>
+
+<div class="app">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="left-panel">
+    <div class="panel-tabs">
+      <button class="panel-tab active" onclick="switchTab('heroes')">👤 Герои</button>
+      <button class="panel-tab" onclick="switchTab('structure')">🏗 Структура</button>
+      <button class="panel-tab" onclick="switchTab('scenes')">🎬 Сцены</button>
+      <button class="panel-tab" onclick="switchTab('setups')">🔗 Setup</button>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right-panel">
+    <div class="analysis-bar" id="analysisBar">
+      <div class="stat-chip" id="chip-scenes"><div class="stat-chip-val">0</div><div class="stat-chip-lbl">Сцен</div></div>
+      <div class="stat-chip" id="chip-ok"><div class="stat-chip-val">—</div><div class="stat-chip-lbl">Хорошо</div></div>
+      <div class="stat-chip" id="chip-warn"><div class="stat-chip-val">—</div><div class="stat-chip-lbl">Риски</div></div>
+      <div class="stat-chip" id="chip-setups"><div class="stat-chip-val">0</div><div class="stat-chip-lbl">Setup открыт</div></div>
+    </div>
+    <div class="chart-area">
+      <div class="chart-title">Эмоциональные качели — заряд сцен</div>
+      <canvas class="wave-canvas" id="waveCanvas"></canvas>
+    </div>
+    <div class="issues-list" id="issuesList"></div>
+  </div>
+
+</div>
+
+<!-- ── TOOLTIP OVERLAY ── -->
+<div class="tooltip-overlay" id="tooltipOverlay" onclick="closeTooltip(event)">
+  <div class="tooltip-box" onclick="event.stopPropagation()">
+    <div class="tooltip-head">
+      <div class="tooltip-head-icon" id="ttIcon">!</div>
+      <div class="tooltip-head-title" id="ttTitle">Правило</div>
+      <button class="tooltip-close" onclick="closeTooltip()">✕</button>
+    </div>
+    <div class="tooltip-body">
+      <div class="tooltip-rule" id="ttRule"></div>
+      <div class="tooltip-example">
+        <div class="tooltip-example-label">Пример: «Касабланка» (1942)</div>
+        <div class="tooltip-example-text" id="ttExample"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════
+   TOOLTIP DATA
+══════════════════════════════════════════ */
+const TIPS = {
+  want: {
+    icon: '🎯',
+    title: 'Хотение героя (WANT)',
+    rule: '<strong>Хотение</strong> — внешняя цель, которую герой сам себе формулирует. Конкретная, измеримая, видимая на экране. Зритель должен понять с первых сцен: чего именно добивается персонаж.',
+    example: 'Рик хочет остаться в стороне от политики, выжить в оккупированном Касабланке, не думать о прошлом. Он сам не называет это вслух — но каждое его действие об этом.'
+  },
+  need: {
+    icon: '💡',
+    title: 'Нужда героя (NEED)',
+    rule: '<strong>Нужда</strong> — то, чего герою на самом деле не хватает. Он её не осознаёт. Нужда обычно противоположна Хотению. Арка героя — это путь от слепоты к осознанию нужды.',
+    example: 'Рику нужно снова поверить в нечто большее себя: в людей, в борьбу, в любовь. Он сам думает, что всё потерял в Париже — на самом деле он просто отгородился.'
+  },
+  lie: {
+    icon: '🎭',
+    title: 'Ложь, в которую верит герой',
+    rule: 'Каждый герой с сильной аркой придерживается ложного убеждения о себе или мире, которое его защищает — и одновременно мешает. <strong>Разрушение лжи = завершение арки.</strong>',
+    example: 'Рик верит: «Я не тороплюсь ни за кого умирать». Он убеждён, что нейтралитет — это мудрость. В финале эта ложь разрушается: он отдаёт билеты и остаётся помогать Лазло.'
+  },
+  arc_type: {
+    icon: '📈',
+    title: 'Тип арки',
+    rule: '<strong>Положительная:</strong> герой преодолевает ложь. <strong>Отрицательная:</strong> герой сдаётся ей. <strong>Плоская:</strong> герой не меняется — меняется мир вокруг него.',
+    example: 'У Рика — положительная арка. Он начинает циником («Я не тороплюсь ни за кого умирать»), а заканчивает человеком, который жертвует личным счастьем ради правого дела.'
+  },
+  incident: {
+    icon: '💥',
+    title: 'Инцидент (10–12%)',
+    rule: 'Событие, после которого <strong>вернуться к прежней жизни нельзя</strong>. Не просто проблема — точка невозврата. Должна произойти на 10–12% хронометража. Если позже — начало затянуто.',
+    example: 'В кафе Рика появляется Илза вместе с борцом Лазло. Рик видит её впервые после Парижа. С этого момента его нейтралитет под угрозой — прошлое пришло за ним.'
+  },
+  midpoint: {
+    icon: '🔄',
+    title: 'Мидпоинт (50%)',
+    rule: 'Ровно в середине истории герой узнаёт нечто, <strong>что переворачивает правила игры</strong>. До мидпоинта герой реагирует. После — действует. Без мидпоинта второй акт провисает.',
+    example: 'Илза объясняет Рику, почему она бросила его в Париже — муж был жив. Рик узнаёт правду. Это меняет всё: он больше не просто обиженный человек, он должен сделать выбор.'
+  },
+  alllost: {
+    icon: '🕳',
+    title: 'Всё потеряно (75%)',
+    rule: '<strong>Самая низкая точка истории.</strong> Всё, что герой строил, рушится. Старая стратегия окончательно не работает. Без этого финальный подъём не будет ощущаться победой.',
+    example: 'Рик продаёт кафе, передаёт бумаги немцам, кажется, что он выбрал деньги и самосохранение. Лазло арестован. Илза в отчаянии. Всё, ради чего они рисковали — потеряно.'
+  },
+  theme: {
+    icon: '🧭',
+    title: 'Тема',
+    rule: 'Тема — не мораль, а <strong>вопрос</strong>, на который история отвечает структурой. Персонажи занимают разные позиции по этому вопросу. Финал — ответ действием, не словами.',
+    example: 'Тема «Касабланки»: стоит ли личное счастье жертв ради общего блага? Рик в начале говорит «нет». В финале его поступок — «да». Ответ дан поступком, а не монологом.'
+  },
+  scene_goal: {
+    icon: '🎯',
+    title: 'Цель сцены',
+    rule: 'У героя в каждой сцене должна быть <strong>конкретная цель на эту сцену</strong>. Не «выжить» — это слишком общо. «Получить визы», «заставить её уйти», «узнать, кто предал». Без цели сцена размыта.',
+    example: 'Сцена в кафе: цель Угарта — передать письма Рику. Цель Рика — не впутываться. Обе цели конкретны и противоречат, поэтому сцена работает.'
+  },
+  scene_obstacle: {
+    icon: '⚡',
+    title: 'Препятствие сцены',
+    rule: 'Препятствие — обычно <strong>другой персонаж со своей противоположной целью</strong>. Без препятствия нет конфликта. Без конфликта сцена — пересказ информации.',
+    example: 'Рику нужно оставаться нейтральным → Илза хочет, чтобы он помог. Рику нужно забыть → Илза не даёт. Препятствие живое, потому что у него тоже есть своя логика.'
+  },
+  scene_outcome: {
+    icon: '↗',
+    title: 'Исход сцены: «да-но» и «нет-и»',
+    rule: '<strong>«Да, но»</strong> — герой добился цели, но появилась новая проблема. <strong>«Нет, и»</strong> — не добился, и стало хуже. Просто «да» снимает напряжение. Просто «нет» останавливает сюжет.',
+    example: 'Рик получает письма (да) — но теперь он соучастник (но). Сцена продвигает историю и добавляет ставку одновременно.'
+  },
+  scene_charge: {
+    icon: '⚖',
+    title: 'Эмоциональный заряд сцены',
+    rule: 'Оцени: <strong>стало лучше (+) или хуже (−)</strong> для героя в этой сцене? Три сцены с одинаковым знаком подряд — сигнал тревоги: зритель перестаёт чувствовать движение.',
+    example: 'После встречи с Илзой: Рик узнаёт правду (+) — но теперь разрывается между ней и делом (−). Заряд меняется даже внутри одной сцены, но итог должен быть один.'
+  },
+  setup_seed: {
+    icon: '🌱',
+    title: 'Setup — посев детали',
+    rule: '<strong>Зритель должен увидеть деталь, но не понять её значения.</strong> Если понял — предсказуемо. Если не увидел — финал покажется обманом. Каждый посеянный элемент обязан выстрелить.',
+    example: 'Рик с самого начала хранит транзитные визы для себя. Зритель видит их — но не знает, что именно эти бумаги станут центром всего финального выбора.'
+  },
+  setup_payoff: {
+    icon: '💥',
+    title: 'Payoff — выстрел детали',
+    rule: 'Без payoff setup — долг. Каждая заряженная деталь должна <strong>разрядиться в нужный момент</strong>. Обычно payoff происходит в третьем акте или в кульминации.',
+    example: 'Визы отданы Илзе и Лазло — поступок, который был невозможен для Рика в начале. Payoff срабатывает именно в тот момент, когда он стоит дороже всего.'
+  },
+};
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+const LS_KEY = 'bezb_screenplay_v1';
+let dirty = false;
+let activeTab = 'heroes';
+
+let project = {
+  title: 'Без названия',
+  heroes: [],
+  structure: {
+    incident: '', midpoint: '', alllost: '', resolution: '',
+    theme: '',
+    act1_notes: '', act2_notes: '', act3_notes: '',
+  },
+  scenes: [],
+  setups: [],
+  idCounter: 1,
+};
+
+function uid() { return 'id' + (project.idCounter++); }
+
+/* ══════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════ */
+function render() {
+  switch (activeTab) {
+    case 'heroes':    renderHeroes();    break;
+    case 'structure': renderStructure(); break;
+    case 'scenes':    renderScenes();    break;
+    case 'setups':    renderSetups();    break;
+  }
+  renderAnalysis();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.panel-tab').forEach((t, i) => {
+    const tabs = ['heroes','structure','scenes','setups'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  render();
+}
+
+/* ── Heroes ── */
+function renderHeroes() {
+  const el = document.getElementById('panelBody');
+  let html = `
+    <div class="ref-band">
+      <div class="ref-band-icon">🎬</div>
+      <div>Описывай каждого ключевого персонажа — их внешнюю цель, внутреннюю нужду и убеждение, в которое они верят. Нажимай <strong>!</strong> рядом с полем, чтобы увидеть правило и пример из «Касабланки».</div>
+    </div>
+    <div class="section-title">Персонажи</div>`;
+
+  for (const h of project.heroes) {
+    html += `
+    <div class="hero-card" id="hero-${h.id}">
+      <div class="hero-card-head">
+        <div class="hero-avatar">${h.avatar || '👤'}</div>
+        <div>
+          <div class="hero-name">${esc(h.name) || 'Новый персонаж'}</div>
+          <div class="hero-role">${esc(h.role) || 'Роль не указана'}</div>
+        </div>
+        <button class="hero-del" onclick="deleteHero('${h.id}')" title="Удалить">✕</button>
+      </div>
+      <div class="section">
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Имя / Кличка</label>
+          </div>
+          <input value="${esc(h.name)}" oninput="updateHero('${h.id}','name',this.value)" placeholder="Как зовут персонажа?">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Роль в истории</label>
+          </div>
+          <input value="${esc(h.role)}" oninput="updateHero('${h.id}','role',this.value)" placeholder="Главный герой / Антагонист / Союзник…">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Хотение (WANT)</label>
+            <span class="field-hint">внешняя цель</span>
+            <button class="help-btn" onclick="openTip('want')">!</button>
+          </div>
+          <input value="${esc(h.want)}" oninput="updateHero('${h.id}','want',this.value)" placeholder="Чего добивается герой на экране?">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Нужда (NEED)</label>
+            <span class="field-hint">внутренняя пустота</span>
+            <button class="help-btn" onclick="openTip('need')">!</button>
+          </div>
+          <input value="${esc(h.need)}" oninput="updateHero('${h.id}','need',this.value)" placeholder="Чего ему не хватает на самом деле?">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Ложь</label>
+            <span class="field-hint">убеждение-ловушка</span>
+            <button class="help-btn" onclick="openTip('lie')">!</button>
+          </div>
+          <input value="${esc(h.lie)}" oninput="updateHero('${h.id}','lie',this.value)" placeholder="В какую ложь о себе или мире он верит?">
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label class="field-label">Тип арки</label>
+            <button class="help-btn" onclick="openTip('arc_type')">!</button>
+          </div>
+          <select onchange="updateHero('${h.id}','arc',this.value)">
+            <option value="" ${!h.arc?'selected':''}>Выбрать…</option>
+            <option value="pos" ${h.arc==='pos'?'selected':''}>📈 Положительная</option>
+            <option value="flat" ${h.arc==='flat'?'selected':''}>➡ Плоская</option>
+            <option value="neg" ${h.arc==='neg'?'selected':''}>📉 Отрицательная</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `<button class="add-btn" onclick="addHero()">+ Добавить персонажа</button>`;
+  el.innerHTML = html;
+}
+
+/* ── Structure ── */
+function renderStructure() {
+  const s = project.structure;
+  const el = document.getElementById('panelBody');
+  el.innerHTML = `
+    <div class="ref-band">
+      <div class="ref-band-icon">🎬</div>
+      <div>Заполняй ключевые точки истории. <strong>Пропорции важны</strong> — программа покажет, если инцидент слишком поздно или «всё потеряно» не там. Нажимай <strong>!</strong> для примера.</div>
+    </div>
+
+    <div class="section-title">Тема</div>
+    <div class="beat-row">
+      <div class="beat-icon">🧭</div>
+      <div style="flex:1">
+        <div class="beat-name">Тема истории <button class="help-btn" onclick="openTip('theme')">!</button></div>
+        <div class="beat-desc">Вопрос, на который история отвечает своей структурой.</div>
+        <input class="beat-inp" value="${esc(s.theme)}" oninput="updateStructure('theme',this.value)" placeholder="Например: что важнее — личное счастье или долг?">
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px">АКТ I — Завязка (0–25%)</div>
+    <div class="beat-row">
+      <div class="beat-icon">💥</div>
+      <div style="flex:1">
+        <div class="beat-name">Инцидент <button class="help-btn" onclick="openTip('incident')">!</button></div>
+        <div class="beat-desc">Точка невозврата. Ориентир: 10–12%</div>
+        <textarea class="beat-inp" rows="2" oninput="updateStructure('incident',this.value)" placeholder="Что ломает привычный мир героя?">${esc(s.incident)}</textarea>
+      </div>
+      <div class="beat-pct act1">~10%</div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px">АКТ II — Противодействие (25–75%)</div>
+    <div class="beat-row">
+      <div class="beat-icon">🔄</div>
+      <div style="flex:1">
+        <div class="beat-name">Мидпоинт <button class="help-btn" onclick="openTip('midpoint')">!</button></div>
+        <div class="beat-desc">Переворот правил. Ориентир: 50%</div>
+        <textarea class="beat-inp" rows="2" oninput="updateStructure('midpoint',this.value)" placeholder="Что меняет правила игры в середине?">${esc(s.midpoint)}</textarea>
+      </div>
+      <div class="beat-pct act2">~50%</div>
+    </div>
+
+    <div class="section-title" style="margin-top:18px">АКТ III — Развязка (75–100%)</div>
+    <div class="beat-row">
+      <div class="beat-icon">🕳</div>
+      <div style="flex:1">
+        <div class="beat-name">Всё потеряно <button class="help-btn" onclick="openTip('alllost')">!</button></div>
+        <div class="beat-desc">Низшая точка. Ориентир: 75%</div>
+        <textarea class="beat-inp" rows="2" oninput="updateStructure('alllost',this.value)" placeholder="Когда всё рушится и старая стратегия не работает?">${esc(s.alllost)}</textarea>
+      </div>
+      <div class="beat-pct act3">~75%</div>
+    </div>
+    <div class="beat-row" style="margin-top:8px">
+      <div class="beat-icon">✨</div>
+      <div style="flex:1">
+        <div class="beat-name">Развязка</div>
+        <div class="beat-desc">Финальный выбор и новое равновесие.</div>
+        <textarea class="beat-inp" rows="2" oninput="updateStructure('resolution',this.value)" placeholder="Чем заканчивается история?">${esc(s.resolution)}</textarea>
+      </div>
+      <div class="beat-pct act3">~95%</div>
+    </div>
+  `;
+}
+
+/* ── Scenes ── */
+function renderScenes() {
+  const el = document.getElementById('panelBody');
+  let html = `
+    <div class="ref-band">
+      <div class="ref-band-icon">🎬</div>
+      <div>Каждая сцена должна <strong>менять ситуацию</strong>. Задавай цель, препятствие, исход. Ползунок заряда строит график качелей справа. Добавляй сцены по порядку — программа сама расставит акты.</div>
+    </div>
+    <div class="section-title">Сцены</div>`;
+
+  const total = project.scenes.length;
+  for (let i = 0; i < project.scenes.length; i++) {
+    const sc = project.scenes[i];
+    const pct = total > 1 ? i / (total - 1) : 0;
+    const actClass = pct < 0.25 ? 'act1' : pct < 0.75 ? 'act2' : 'act3';
+    const actLabel = pct < 0.25 ? 'АКТ I' : pct < 0.75 ? 'АКТ II' : 'АКТ III';
+    const cv = sc.charge || 0;
+    const cvClass = cv > 0 ? 'pos' : cv < 0 ? 'neg' : 'neu';
+
+    const outcomes = [
+      { id:'yn', label:'Да' },
+      { id:'yb', label:'Да, но…' },
+      { id:'nb', label:'Нет, и…' },
+      { id:'na', label:'Нет' },
+    ];
+
+    html += `
+    <div class="scene-card">
+      <div class="scene-card-head">
+        <span class="scene-num ${actClass}">${actLabel}</span>
+        <input class="scene-title-inp" value="${esc(sc.title)}" oninput="updateScene('${sc.id}','title',this.value)" placeholder="Название сцены">
+        <button class="scene-del" onclick="deleteScene('${sc.id}')">✕</button>
+      </div>
+      <div class="scene-grid">
+        <div class="scene-field">
+          <label>Цель <button class="help-btn" style="display:inline-flex;width:15px;height:15px;font-size:9px" onclick="openTip('scene_goal')">!</button></label>
+          <input value="${esc(sc.goal)}" oninput="updateScene('${sc.id}','goal',this.value)" placeholder="Чего добивается герой?">
+        </div>
+        <div class="scene-field">
+          <label>Препятствие <button class="help-btn" style="display:inline-flex;width:15px;height:15px;font-size:9px" onclick="openTip('scene_obstacle')">!</button></label>
+          <input value="${esc(sc.obstacle)}" oninput="updateScene('${sc.id}','obstacle',this.value)" placeholder="Что мешает?">
+        </div>
+        <div class="scene-field full">
+          <label>Описание</label>
+          <textarea rows="2" oninput="updateScene('${sc.id}','desc',this.value)">${esc(sc.desc)}</textarea>
+        </div>
+        <div class="charge-row">
+          <span class="charge-label">Заряд <button class="help-btn" style="display:inline-flex;width:15px;height:15px;font-size:9px" onclick="openTip('scene_charge')">!</button></span>
+          <input type="range" class="charge-slider" min="-5" max="5" value="${cv}" oninput="updateScene('${sc.id}','charge',parseInt(this.value));this.nextElementSibling.textContent=(parseInt(this.value)>0?'+':'')+this.value;this.nextElementSibling.className='charge-val '+(parseInt(this.value)>0?'pos':parseInt(this.value)<0?'neg':'neu')">
+          <span class="charge-val ${cvClass}">${cv > 0 ? '+' : ''}${cv}</span>
+        </div>
+        <div class="outcome-row">
+          <span style="font-size:11px;font-weight:600;color:var(--muted);margin-right:2px">Исход <button class="help-btn" style="display:inline-flex;width:15px;height:15px;font-size:9px" onclick="openTip('scene_outcome')">!</button></span>
+          ${outcomes.map(o => `<button class="outcome-btn ${sc.outcome===o.id?'active-'+o.id:''}" onclick="setOutcome('${sc.id}','${o.id}')">${o.label}</button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  html += `<button class="add-btn" onclick="addScene()">+ Добавить сцену</button>`;
+  el.innerHTML = html;
+}
+
+/* ── Setups ── */
+function renderSetups() {
+  const el = document.getElementById('panelBody');
+  let html = `
+    <div class="ref-band">
+      <div class="ref-band-icon">🎬</div>
+      <div>Фиксируй все <strong>посеянные детали</strong>: где появились, где должны выстрелить. Программа отметит незакрытые setup'ы как риск. <strong>Нажимай !</strong> для правила.</div>
+    </div>
+    <div class="section-title">Setup / Payoff</div>`;
+
+  for (const sp of project.setups) {
+    const closed = !!sp.payoff;
+    html += `
+    <div class="setup-item">
+      <div class="setup-dot ${closed?'closed':'open'}"></div>
+      <div class="setup-content">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span class="setup-status ${closed?'closed':'open'}">${closed?'✓ Закрыт':'● Открыт'}</span>
+          <button class="help-btn" onclick="openTip('setup_seed')" style="display:inline-flex">!</button>
+        </div>
+        <div class="setup-fields">
+          <input value="${esc(sp.seed)}" oninput="updateSetup('${sp.id}','seed',this.value)" placeholder="Посев: что и где?">
+          <input value="${esc(sp.payoff)}" oninput="updateSetup('${sp.id}','payoff',this.value)" placeholder="Payoff: где выстрелит?  <button class='help-btn' onclick='openTip(\"setup_payoff\")'>!</button>">
+        </div>
+      </div>
+      <button class="setup-del" onclick="deleteSetup('${sp.id}')">✕</button>
+    </div>`;
+  }
+
+  html += `<button class="add-btn" onclick="addSetup()">+ Добавить setup</button>`;
+  el.innerHTML = html;
+}
+
+/* ── Analysis ── */
+function renderAnalysis() {
+  const scenes = project.scenes;
+  const n = scenes.length;
+
+  // Stats
+  let okCnt = 0, warnCnt = 0;
+  const openSetups = project.setups.filter(s => !s.payoff).length;
+
+  // Detect runs of same sign
+  let runIssues = [];
+  if (n >= 3) {
+    let run = 1;
+    for (let i = 1; i < n; i++) {
+      const prev = Math.sign(scenes[i-1].charge || 0);
+      const curr = Math.sign(scenes[i].charge || 0);
+      if (curr === prev && curr !== 0) run++;
+      else run = 1;
+      if (run >= 3) {
+        const word = curr > 0 ? 'позитивных' : 'негативных';
+        runIssues.push(`Сцены ${i-1}–${i+1}: ${run} ${word} подряд — возможна потеря напряжения.`);
+      }
+    }
+  }
+
+  // Amplitude check
+  const charges = scenes.map(s => s.charge || 0);
+  const firstHalf = charges.slice(0, Math.floor(n/2));
+  const secondHalf = charges.slice(Math.floor(n/2));
+  const amp1 = firstHalf.length ? Math.max(...firstHalf.map(Math.abs)) : 0;
+  const amp2 = secondHalf.length ? Math.max(...secondHalf.map(Math.abs)) : 0;
+  const ampGood = n < 4 || amp2 >= amp1;
+
+  // Issues list
+  const issues = [];
+  if (n === 0) {
+    issues.push({ level:'warn', text:'Сцен пока нет. Добавь хотя бы несколько, чтобы увидеть структуру.' });
+  }
+  if (project.heroes.length === 0) {
+    issues.push({ level:'warn', text:'Нет персонажей. Без описанной арки сложно понять, ради кого история.' });
+  }
+  if (!project.structure.theme) {
+    issues.push({ level:'warn', text:'Тема не сформулирована. Это не блокирует работу, но помогает проверять, зачем каждая сцена.' });
+  }
+  if (!project.structure.incident) {
+    issues.push({ level:'warn', text:'Инцидент не описан. Убедись, что в первых 10–12% есть точка невозврата.' });
+  }
+  if (!project.structure.midpoint) {
+    issues.push({ level:'warn', text:'Мидпоинт пустой — без него второй акт часто провисает.' });
+  }
+  if (openSetups > 0) {
+    issues.push({ level:'warn', text:`${openSetups} setup${openSetups===1?'':'ов'} без payoff — проверь, выстрелят ли они.` });
+    warnCnt += openSetups;
+  }
+  for (const r of runIssues) {
+    issues.push({ level:'warn', text: r });
+    warnCnt++;
+  }
+  if (n >= 4 && !ampGood) {
+    issues.push({ level:'warn', text:'Амплитуда качелей не растёт ко второй половине. Финал должен быть мощнее завязки.' });
+    warnCnt++;
+  }
+  if (n >= 3 && issues.filter(i=>i.level!=='ok').length === 0) {
+    okCnt = n;
+    issues.push({ level:'ok', text:'Структура выглядит хорошо — продолжай добавлять сцены.' });
+  }
+
+  // Update chips
+  const scChip = document.getElementById('chip-scenes');
+  if (scChip) { scChip.querySelector('.stat-chip-val').textContent = n; }
+  const okChip = document.getElementById('chip-ok');
+  if (okChip) { okChip.querySelector('.stat-chip-val').textContent = n - warnCnt > 0 ? n - warnCnt : '—'; }
+  const wChip = document.getElementById('chip-warn');
+  if (wChip) {
+    wChip.querySelector('.stat-chip-val').textContent = warnCnt || '—';
+    wChip.className = 'stat-chip ' + (warnCnt > 0 ? 'warn' : '');
+  }
+  const stChip = document.getElementById('chip-setups');
+  if (stChip) {
+    stChip.querySelector('.stat-chip-val').textContent = openSetups;
+    stChip.className = 'stat-chip ' + (openSetups > 0 ? 'warn' : '');
+  }
+
+  // Draw chart
+  drawWave(charges);
+
+  // Issues
+  const issEl = document.getElementById('issuesList');
+  if (issEl) {
+    issEl.innerHTML = issues.map(iss => {
+      const icon = iss.level === 'ok' ? '✓' : iss.level === 'warn' ? '⚠' : '✕';
+      return `<div class="issue-item ${iss.level}"><span class="issue-icon">${icon}</span><span>${iss.text}</span></div>`;
+    }).join('');
+  }
+}
+
+/* ── Wave chart ── */
+function drawWave(charges) {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const n = charges.length;
+  const midY = H / 2;
+  const pad = 20;
+  const usableW = W - pad * 2;
+  const scaleY = (H / 2 - 16) / 5;
+
+  // zero line
+  ctx.strokeStyle = 'oklch(34% 0.012 240)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, midY); ctx.lineTo(W - pad, midY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (n === 0) return;
+
+  const pts = charges.map((c, i) => ({
+    x: pad + (n === 1 ? usableW / 2 : (i / (n - 1)) * usableW),
+    y: midY - (c * scaleY),
+  }));
+
+  // fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'oklch(70% 0.14 195 / .22)');
+  grad.addColorStop(0.5, 'oklch(70% 0.14 195 / .04)');
+  grad.addColorStop(1, 'oklch(68% 0.18 25 / .14)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, midY);
+  for (const p of pts) ctx.lineTo(p.x, p.y);
+  ctx.lineTo(pts[pts.length-1].x, midY);
+  ctx.closePath(); ctx.fill();
+
+  // line
+  ctx.strokeStyle = 'oklch(70% 0.14 195)';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  // dots
+  for (const p of pts) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'oklch(70% 0.14 195)';
+    ctx.fill();
+    ctx.strokeStyle = 'var(--bg)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // act separators
+  if (n > 2) {
+    ctx.strokeStyle = 'oklch(55% 0.010 240 / .5)';
+    ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    for (const pct of [0.25, 0.75]) {
+      const x = pad + pct * usableW;
+      ctx.beginPath(); ctx.moveTo(x, 4); ctx.lineTo(x, H - 4); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'oklch(55% 0.010 240)';
+    ctx.font = '10px system-ui';
+    ctx.fillText('I', pad + 0.12 * usableW, H - 4);
+    ctx.fillText('II', pad + 0.48 * usableW, H - 4);
+    ctx.fillText('III', pad + 0.84 * usableW, H - 4);
+  }
+}
+
+/* ══════════════════════════════════════════
+   MUTATIONS
+══════════════════════════════════════════ */
+function addHero() {
+  project.heroes.push({ id: uid(), name: '', role: '', want: '', need: '', lie: '', arc: '', avatar: '👤' });
+  markDirty(); renderHeroes();
+}
+function deleteHero(id) {
+  project.heroes = project.heroes.filter(h => h.id !== id);
+  markDirty(); renderHeroes();
+}
+function updateHero(id, key, val) {
+  const h = project.heroes.find(h => h.id === id);
+  if (h) h[key] = val;
+  markDirty();
+  if (key === 'name' || key === 'role') {
+    const card = document.getElementById('hero-' + id);
+    if (card) {
+      card.querySelector('.hero-name').textContent = val || 'Новый персонаж';
+    }
+  }
+}
+
+function updateStructure(key, val) {
+  project.structure[key] = val;
+  markDirty(); renderAnalysis();
+}
+
+function addScene() {
+  project.scenes.push({ id: uid(), title: 'Новая сцена', goal: '', obstacle: '', desc: '', charge: 0, outcome: '' });
+  markDirty(); renderScenes(); renderAnalysis();
+}
+function deleteScene(id) {
+  project.scenes = project.scenes.filter(s => s.id !== id);
+  markDirty(); renderScenes(); renderAnalysis();
+}
+function updateScene(id, key, val) {
+  const sc = project.scenes.find(s => s.id === id);
+  if (sc) sc[key] = val;
+  markDirty();
+  if (key === 'charge') renderAnalysis();
+}
+function setOutcome(id, outcome) {
+  const sc = project.scenes.find(s => s.id === id);
+  if (sc) sc.outcome = sc.outcome === outcome ? '' : outcome;
+  markDirty(); renderScenes();
+}
+
+function addSetup() {
+  project.setups.push({ id: uid(), seed: '', payoff: '' });
+  markDirty(); renderSetups(); renderAnalysis();
+}
+function deleteSetup(id) {
+  project.setups = project.setups.filter(s => s.id !== id);
+  markDirty(); renderSetups(); renderAnalysis();
+}
+function updateSetup(id, key, val) {
+  const sp = project.setups.find(s => s.id === id);
+  if (sp) sp[key] = val;
+  markDirty();
+  if (key === 'payoff') { renderSetups(); renderAnalysis(); }
+}
+
+/* ══════════════════════════════════════════
+   TOOLTIP
+══════════════════════════════════════════ */
+function openTip(key) {
+  const t = TIPS[key]; if (!t) return;
+  document.getElementById('ttIcon').textContent = t.icon;
+  document.getElementById('ttTitle').textContent = t.title;
+  document.getElementById('ttRule').innerHTML = t.rule;
+  document.getElementById('ttExample').textContent = t.example;
+  document.getElementById('tooltipOverlay').classList.add('open');
+}
+function closeTooltip(e) {
+  if (!e || e.target === document.getElementById('tooltipOverlay'))
+    document.getElementById('tooltipOverlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTooltip({}); });
+
+/* ══════════════════════════════════════════
+   SAVE / LOAD
+══════════════════════════════════════════ */
+const FORMAT = 'bezb.screenplay';
+const FVER   = 1;
+
+function buildSave() {
+  return { format: FORMAT, version: FVER, savedAt: new Date().toISOString(), ...project };
+}
+
+function applyLoad(data) {
+  if (!data || data.format !== FORMAT) { toast('⚠️ Не файл сценария'); return false; }
+  Object.assign(project, { title: data.title, heroes: data.heroes || [], structure: data.structure || project.structure, scenes: data.scenes || [], setups: data.setups || [], idCounter: data.idCounter || 1 });
+  return true;
+}
+
+function exportProject() {
+  const name = prompt('Название проекта:', project.title);
+  if (name === null) return;
+  project.title = (name || '').trim() || 'Без названия';
+  const blob = new Blob([JSON.stringify(buildSave(), null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const safe = project.title.replace(/[^\wа-яА-ЯёЁ \-]/g, '').trim() || 'сценарий';
+  const day  = new Date().toISOString().slice(0, 10);
+  const a = document.createElement('a'); a.href = url; a.download = safe + '_' + day + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 800);
+  autosave(); markSaved(); toast('💾 Сохранено: ' + a.download);
+}
+
+function importProject() {
+  if (dirty && !confirm('Текущий проект не сохранён. Загрузить другой?')) return;
+  document.getElementById('importInput').click();
+}
+
+function onImportFile(e) {
+  const file = e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      if (applyLoad(JSON.parse(ev.target.result))) { autosave(); markSaved(); render(); toast('📂 Загружен: ' + project.title); }
+    } catch { toast('⚠️ Файл повреждён'); }
+  };
+  reader.readAsText(file);
+}
+
+let autoTimer = null;
+function autosave() {
+  clearTimeout(autoTimer);
+  autoTimer = setTimeout(() => { try { localStorage.setItem(LS_KEY, JSON.stringify(buildSave())); } catch {} }, 500);
+}
+
+function loadAutosave() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    return applyLoad(data);
+  } catch { return false; }
+}
+
+function markDirty() {
+  dirty = true;
+  const el = document.getElementById('savePill');
+  if (el) { el.textContent = '● Не сохранено'; el.className = 'save-pill dirty'; }
+  autosave();
+}
+function markSaved() {
+  dirty = false;
+  const el = document.getElementById('savePill');
+  if (el) { el.textContent = '✓ ' + (project.title || 'Без названия'); el.className = 'save-pill saved'; }
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); exportProject(); } });
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ── Utils ── */
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+window.addEventListener('resize', () => {
+  const charges = project.scenes.map(s => s.charge || 0);
+  drawWave(charges);
+});
+
+/* ── Init ── */
+const restored = loadAutosave();
+render();
+markSaved();
+if (restored) toast('↩ Восстановлена последняя сессия');
+</script>
+</body>
+</html>
