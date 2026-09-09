@@ -406,6 +406,28 @@ main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc
 .modal-box { max-width: 90vw; max-height: 90vh; }
 .modal-box img { max-width: 100%; max-height: 90vh; border-radius: var(--r-md); display: block; }
 
+/* ── Scheme reference ── */
+.scheme-box {
+  margin-top: 12px; padding: 10px 12px;
+  background: var(--raised); border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.scheme-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.scheme-list { display: flex; flex-direction: column; gap: 5px; }
+.scheme-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--body);
+}
+.scheme-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.scheme-from { font-weight: 700; min-width: 30px; }
+.scheme-arr { color: var(--muted); }
+.scheme-to { color: var(--muted); }
+
 /* ── Header: save controls ── */
 .save-state {
   font-size: 11px; font-weight: 600;
@@ -467,6 +489,10 @@ main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc
     <div class="legend-section">
       <h3>Планы (российская система)</h3>
       <div class="legend-row" id="legendRow"></div>
+      <div class="scheme-box">
+        <div class="scheme-title">Схема сочетаний</div>
+        <div class="scheme-list" id="schemeList"></div>
+      </div>
     </div>
 
     <div class="sidebar-body" id="shotLibrary"></div>
@@ -504,31 +530,70 @@ main { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: calc
    PLAN SYSTEM  (Russian / VGIK)
 ══════════════════════════════════════════ */
 const PLANS = [
-  { id:'ДП',  label:'Детальный',       color:'#a855f7', level:1 },
-  { id:'КП',  label:'Крупный',         color:'#6366f1', level:2 },
-  { id:'1СП', label:'1-й средний',     color:'#0ea5e9', level:3 },
-  { id:'2СП', label:'2-й средний',     color:'#10b981', level:4 },
-  { id:'ОП',  label:'Общий',           color:'#f59e0b', level:5 },
-  { id:'ДлП', label:'Дальний',         color:'#ef4444', level:6 },
+  { id:'ДП',  label:'Детальный',    color:'#a855f7' },
+  { id:'КП',  label:'Крупный',      color:'#6366f1' },
+  { id:'2СП', label:'2-й средний',  color:'#10b981' },
+  { id:'ДлП', label:'Дальний',      color:'#ef4444' },
+  { id:'ОП',  label:'Общий',        color:'#f59e0b' },
+  { id:'1СП', label:'1-й средний',  color:'#0ea5e9' },
 ];
 const planById = Object.fromEntries(PLANS.map(p=>[p.id,p]));
 
-const COMPAT_NOTES = {
-  ok:   'Плавный переход — соседние уровни.',
-  warn1:'Пропущен один уровень — ощущение рывка. Допустимо при акценте.',
-  warn2:'Пропущено два уровня — резкий монтажный скачок. Нужна врезка или обоснование.',
-  bad:  'Слишком большой скачок — дезориентирует зрителя. Добавь промежуточный план.',
+/* Пары совместимости (симметричные).
+   Каждый план дружит ровно с двумя другими — вместе они
+   образуют замкнутый круг: ДП → КП → 2СП → ДлП → ОП → 1СП → ДП */
+const FRIENDS = {
+  'ДП':  ['КП',  '1СП'],
+  'КП':  ['ДП',  '2СП'],
+  '1СП': ['ДП',  'ОП' ],
+  '2СП': ['КП',  'ДлП'],
+  'ОП':  ['ДлП', '1СП'],
+  'ДлП': ['ОП',  '2СП'],
 };
+
+/* Порядок по кругу — нужен, чтобы подсказать промежуточный план */
+const CYCLE = ['ДП','КП','2СП','ДлП','ОП','1СП'];
+const cycleIdx = Object.fromEntries(CYCLE.map((id,i)=>[id,i]));
+
+function cycleDist(idA, idB) {
+  const d = Math.abs(cycleIdx[idA] - cycleIdx[idB]);
+  return Math.min(d, CYCLE.length - d);
+}
+
+/* Планы, дружащие и с A, и с B — их можно вставить между */
+function bridgePlans(idA, idB) {
+  return CYCLE.filter(x => x !== idA && x !== idB &&
+    FRIENDS[x].includes(idA) && FRIENDS[x].includes(idB));
+}
 
 function getCompat(idA, idB) {
   const a = planById[idA], b = planById[idB];
   if (!a || !b) return null;
-  const diff = Math.abs(a.level - b.level);
-  if (diff === 0) return { level:'warn', note:'Один и тот же план рядом — jump cut риск. Смени ракурс или добавь врезку.' };
-  if (diff === 1) return { level:'ok',   note: COMPAT_NOTES.ok };
-  if (diff === 2) return { level:'warn', note: COMPAT_NOTES.warn1 };
-  if (diff === 3) return { level:'warn', note: COMPAT_NOTES.warn2 };
-  return { level:'bad', note: COMPAT_NOTES.bad };
+
+  if (idA === idB) return {
+    level: 'warn',
+    note: 'Один и тот же план рядом — риск jump cut. Смени ракурс или добавь врезку.'
+  };
+
+  if (FRIENDS[idA].includes(idB)) return {
+    level: 'ok',
+    note: `${a.label} и ${b.label} — сочетаются по схеме.`
+  };
+
+  const bridges = bridgePlans(idA, idB);
+  const hint = bridges.length
+    ? ` Вставь между ними ${bridges.map(x=>planById[x].label.toLowerCase()).join(' или ')}.`
+    : '';
+
+  if (cycleDist(idA, idB) === 2) return {
+    level: 'warn',
+    note: `${a.label} и ${b.label} не сочетаются напрямую.${hint}`
+  };
+
+  return {
+    level: 'bad',
+    note: `${a.label} → ${b.label} — противоположные планы, стык развалится.${hint}`
+  };
 }
 
 /* ══════════════════════════════════════════
@@ -561,9 +626,21 @@ function planBadge(planId) {
 /* ══════════════════════════════════════════
    RENDER LEGEND
 ══════════════════════════════════════════ */
+function renderScheme() {
+  const box = document.getElementById('schemeList');
+  if (!box) return;
+  box.innerHTML = PLANS.map(p => `
+    <div class="scheme-item">
+      <span class="scheme-dot" style="background:${p.color}"></span>
+      <span class="scheme-from">${p.id}</span>
+      <span class="scheme-arr">↔</span>
+      <span class="scheme-to">${FRIENDS[p.id].join(', ')}</span>
+    </div>`).join('');
+}
+
 function renderLegend() {
   document.getElementById('legendRow').innerHTML = PLANS.map(p=>
-    `<span class="legend-chip" style="background:${p.color}" title="${p.label}">${p.id} ${p.label}</span>`
+    `<span class="legend-chip" style="background:${p.color}" title="${p.label} сочетается с: ${FRIENDS[p.id].map(f=>planById[f].label).join(', ')}">${p.id} ${p.label}</span>`
   ).join('');
 }
 
@@ -1070,6 +1147,7 @@ window.addEventListener('beforeunload', e => {
    INIT
 ══════════════════════════════════════════ */
 renderLegend();
+renderScheme();
 const restored = loadAutosave();
 renderLibrary();
 renderTimeline();
